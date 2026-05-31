@@ -1,0 +1,80 @@
+.socials {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: var(--s4);
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  padding: 9px 12px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+  position: relative;
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.social-btn:hover {
+  border-color: var(--slate);
+  box-shadow: var(--shadow-1);
+  transform: translateY(-1px);
+}
+
+.social-btn:disabled { pointer-events: none; }
+
+.social-btn .logo {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.social-btn .lbl { text-align: center; }
+
+.social-btn .spin { display: none; }
+
+.social-btn.loading { color: transparent; }
+.social-btn.loading .logo,
+.social-btn.loading .lbl { opacity: 0; }
+.social-btn.loading .spin {
+  display: block;
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Secondary socials — span both columns, stack vertically */
+.socials-more {
+  grid-column: 1 / -1;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+.socials-more.open { display: flex; }
+
+.more-socials {
+  grid-column: 1 / -1;
+  background: none;
+  border: none;
+  color: var(--evergreen);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 2px 0;
+  text-align: center;
+  cursor: pointer;
+  justify-self: center;
+}
+.more-socials:hover { text-decoration: underline; }
