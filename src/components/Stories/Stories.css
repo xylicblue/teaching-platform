@@ -1,0 +1,118 @@
+.stories {
+  background: #F4EFE5;
+  padding: 88px 0;
+  border-top: 1px solid #E0D8C9;
+}
+
+.story-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.story {
+  background: #fff;
+  border: 1px solid #E0D8C9;
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.story:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 22px rgba(31, 27, 22, 0.1);
+}
+
+/* Grade jump row */
+.grade-jump {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.grade {
+  width: 52px;
+  height: 52px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.grade.from {
+  background: #EFE9DD;
+  color: #5C544A;
+  border: 1px solid #E0D8C9;
+}
+
+.grade.to {
+  background: #1F4A3D;
+  color: #FAF7F2;
+}
+
+.arr { color: #C9923B; display: flex; align-items: center; flex-shrink: 0; }
+
+.gj-sub {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1F1B16;
+}
+
+.gj-time {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  color: #5C544A;
+  margin-top: 2px;
+}
+
+/* Quote */
+.story-quote {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.6;
+  color: #1F1B16;
+  margin-top: 16px;
+  flex: 1;
+}
+
+/* Student */
+.story-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #EFE9DD;
+}
+
+.story-av {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #FAF7F2;
+  flex-shrink: 0;
+}
+
+.wn { font-weight: 600; font-size: 13px; color: #1F1B16; }
+.wt { font-size: 12px; color: #5C544A; margin-top: 1px; }
+
+@media (max-width: 1080px) {
+  .story-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 640px) {
+  .story-grid { grid-template-columns: 1fr; }
+  .stories { padding: 56px 0; }
+}

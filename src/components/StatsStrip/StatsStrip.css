@@ -1,0 +1,38 @@
+.ribbon {
+  background: #1F4A3D;
+  color: #FAF7F2;
+}
+
+.ribbon-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.rb {
+  padding: 32px 16px;
+  text-align: center;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.rb:first-child { border-left: none; }
+
+.rb b {
+  display: block;
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1;
+}
+
+.rb span {
+  display: block;
+  font-size: 13px;
+  opacity: 0.82;
+  margin-top: 7px;
+}
+
+@media (max-width: 768px) {
+  .ribbon-inner { grid-template-columns: 1fr 1fr; }
+  .rb:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,0.12); }
+  .rb:nth-child(odd) { border-left: none; }
+}

@@ -1,0 +1,166 @@
+.tutor-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #E5DFD3;
+  border-radius: 8px;
+  background-color: #fff;
+  overflow: hidden;
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+.tutor-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 32px rgba(31, 27, 22, 0.1);
+}
+
+/* Colored header */
+.tutor-card__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  min-height: 100px;
+  position: relative;
+}
+
+.tutor-card__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  background-color: rgba(250, 247, 242, 0.2);
+  border: 2px solid rgba(250, 247, 242, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tutor-card__initials {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #FAF7F2;
+  letter-spacing: -0.01em;
+}
+
+.tutor-card__header-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.tutor-card__rating {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 400;
+  color: #FAF7F2;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tutor-card__star {
+  color: #F5D98B;
+  font-size: 13px;
+}
+
+.tutor-card__sessions {
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  color: rgba(250, 247, 242, 0.7);
+}
+
+/* Body */
+.tutor-card__body {
+  flex: 1;
+  padding: 18px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tutor-card__name {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #1F1B16;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.tutor-card__subjects {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5C544A;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tutor-card__quote {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 14px;
+  font-style: italic;
+  color: #1F1B16;
+  margin: 6px 0;
+  padding: 0;
+  line-height: 1.6;
+}
+
+.tutor-card__credential {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  color: #5C544A;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Footer */
+.tutor-card__footer {
+  padding: 12px 20px 16px;
+  border-top: 1px solid #E5DFD3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tutor-card__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tutor-card__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  color: #5C544A;
+}
+
+.tutor-card__rate {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: #1F1B16;
+  font-weight: 400;
+}
+
+.tutor-card__profile-link {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+  white-space: nowrap;
+}
+
+.tutor-card:hover .tutor-card__profile-link {
+  opacity: 1;
+  transform: translateX(0);
+}

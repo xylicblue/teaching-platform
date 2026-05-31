@@ -1,0 +1,211 @@
+.bookcard {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+
+/* ── head: price + demo banner ── */
+.bookcard-head {
+  padding: var(--s5) var(--s5) var(--s4);
+}
+
+.bc-price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.bc-price b {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.bc-price .per  { font-size: 14px; color: var(--slate); }
+.bc-price .from { font-size: 12px; color: var(--slate); margin-left: auto; align-self: center; }
+
+.bc-demo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--s4);
+  background: var(--evergreen-t);
+  border: 1px solid #cfe0d6;
+  border-radius: var(--r-btn);
+  padding: 10px 12px;
+}
+
+.bc-demo .pin {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--evergreen);
+  color: var(--paper);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.bc-demo b    { font-size: 13.5px; color: var(--evergreen); display: block; }
+.bc-demo span { font-size: 12px;   color: var(--success); }
+
+/* ── availability calendar ── */
+.bc-avail {
+  padding: 0 var(--s5) var(--s4);
+}
+
+.avail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--s3);
+}
+
+.avail-head .lbl {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.today-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--success);
+}
+
+/* 7-day grid */
+.cal {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.cal .dow {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--slate);
+  text-align: center;
+  padding-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cal .day {
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  padding: 0;
+}
+
+.cal .day .availdot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.cal .day.has:hover { border-color: var(--evergreen); color: var(--evergreen); }
+
+.cal .day.none {
+  color: var(--cloud);
+  background: var(--paper);
+  cursor: not-allowed;
+}
+
+.cal .day.sel {
+  background: var(--evergreen);
+  border-color: var(--evergreen);
+  color: var(--paper);
+}
+
+.cal .day.sel .availdot { background: var(--paper); }
+
+.cal .day.is-today { box-shadow: 0 0 0 2px var(--saffron) inset; }
+
+/* Time slots */
+.avail-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--s3);
+}
+
+.tslot {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+
+.tslot:hover { border-color: var(--evergreen); color: var(--evergreen); }
+.tslot[aria-pressed="true"] { background: var(--evergreen); border-color: var(--evergreen); color: var(--paper); }
+
+/* ── footer ── */
+.bookcard-foot {
+  padding: var(--s4) var(--s5) var(--s5);
+  border-top: 1px solid var(--cloud-2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bc-trustnote {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--slate);
+}
+
+.bc-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--slate);
+  margin-top: 2px;
+}
+
+.bc-meta-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── watching nudge ── */
+.watching {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px var(--s5);
+  background: var(--terracotta-t);
+  border-top: 1px solid #ecd3c4;
+  font-size: 12.5px;
+  color: var(--terracotta);
+  font-weight: 600;
+}

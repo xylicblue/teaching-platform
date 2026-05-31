@@ -1,0 +1,23 @@
+.crumb-bar {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+
+.crumb-inner {
+  display: flex;
+  align-items: center;
+  height: 46px;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--slate);
+}
+
+.crumb-inner a { color: var(--slate); }
+.crumb-inner a:hover { color: var(--evergreen); }
+.crumb-inner .sep  { opacity: 0.5; }
+.crumb-inner .cur  { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .crumb-inner { font-size: 12px; }
+  .crumb-inner .hide-sm { display: none; }
+}

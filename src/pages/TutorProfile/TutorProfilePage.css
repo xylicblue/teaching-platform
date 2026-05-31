@@ -1,0 +1,74 @@
+/* ── page wrapper ── */
+.profile-page {
+  background: var(--paper);
+  min-height: 100vh;
+}
+
+/* ── main content area ── */
+.profile {
+  padding: var(--s6) 0 var(--s9);
+}
+
+/* ── two-column layout ── */
+.pcols {
+  display: grid;
+  grid-template-columns: 1fr 372px;
+  gap: var(--s7);
+  align-items: start;
+}
+
+.pcols > * { min-width: 0; }
+
+/* ── left column ── */
+.pmain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s7);
+}
+
+/* ── right column — sticky ── */
+.aside {
+  position: sticky;
+  top: 84px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+/* Mobile sticky CTA price */
+.mcta-price {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.mcta-price .mono {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.mcta-price span:last-child {
+  font-size: 11px;
+  color: var(--slate);
+}
+
+/* ── responsive ── */
+@media (max-width: 980px) {
+  .pcols {
+    grid-template-columns: 1fr;
+  }
+  .aside {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile {
+    padding: var(--s5) 0 calc(var(--s9) + 60px);
+  }
+}
