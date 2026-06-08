@@ -58,8 +58,6 @@ export default function PromoPanel() {
     return () => clearInterval(timer)
   }, [])
 
-  const card = CARDS[idx]
-
   return (
     <aside className="promo" aria-label="Why students choose Ilm">
       <div className="promo-grain" aria-hidden="true" />
