@@ -1,3 +1,6 @@
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+
 type Props = {
   name:     string
   role?:    string
@@ -16,6 +19,12 @@ function cap(s: string) {
 
 export default function SuccessScreen({ name, role, isSignIn }: Props) {
   const dest = role ? (DEST[role] ?? 'your dashboard') : 'your dashboard'
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const id = setTimeout(() => navigate('/dashboard'), 1800)
+    return () => clearTimeout(id)
+  }, [navigate])
 
   return (
     <div className="success-screen show" role="status" aria-live="polite">
