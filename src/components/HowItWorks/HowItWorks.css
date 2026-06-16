@@ -134,3 +134,8 @@
   margin: 0;
   line-height: 1.6;
 }
+
+@media (max-width: 480px) {
+  .how-it-works { padding: 56px 16px; }
+  .how-it-works__story { font-size: 17px; }
+}

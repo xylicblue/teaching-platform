@@ -112,3 +112,7 @@
   background-color: #C9923B;
   border-radius: 1px;
 }
+
+@media (max-width: 480px) {
+  .for-parents { padding: 56px 16px; }
+}

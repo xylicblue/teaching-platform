@@ -2,9 +2,10 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 type Props = {
-  name:     string
-  role?:    string
-  isSignIn: boolean
+  name:        string
+  role?:       string
+  isSignIn:    boolean
+  redirectTo?: string
 }
 
 const DEST: Record<string, string> = {
@@ -17,14 +18,16 @@ function cap(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
-export default function SuccessScreen({ name, role, isSignIn }: Props) {
-  const dest = role ? (DEST[role] ?? 'your dashboard') : 'your dashboard'
+export default function SuccessScreen({ name, role, isSignIn, redirectTo }: Props) {
+  const dest = redirectTo
+    ? 'your teacher application'
+    : role ? (DEST[role] ?? 'your dashboard') : 'your dashboard'
   const navigate = useNavigate()
 
   useEffect(() => {
-    const id = setTimeout(() => navigate('/dashboard'), 1800)
+    const id = setTimeout(() => navigate(redirectTo ?? '/dashboard'), 1800)
     return () => clearTimeout(id)
-  }, [navigate])
+  }, [navigate, redirectTo])
 
   return (
     <div className="success-screen show" role="status" aria-live="polite">

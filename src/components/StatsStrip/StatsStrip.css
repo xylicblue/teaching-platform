@@ -36,3 +36,11 @@
   .rb:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,0.12); }
   .rb:nth-child(odd) { border-left: none; }
 }
+
+@media (max-width: 480px) {
+  .ribbon-inner { grid-template-columns: 1fr; }
+  .rb { border-left: none; border-bottom: 1px solid rgba(255,255,255,0.12); padding: 24px 20px; }
+  .rb:last-child { border-bottom: none; }
+  .rb:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,0.12); }
+  .rb:nth-child(-n+3) { border-bottom: 1px solid rgba(255,255,255,0.12); }
+}

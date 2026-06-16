@@ -69,3 +69,8 @@
   background-color: #173d32;
   transform: translateY(-1px);
 }
+
+@media (max-width: 480px) {
+  .demo-cta { padding: 48px 16px; }
+  .demo-cta__button { width: 100%; justify-content: center; }
+}

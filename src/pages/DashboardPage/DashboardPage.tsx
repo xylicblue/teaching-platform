@@ -5,6 +5,7 @@ import Topbar        from '../../components/dashboard/Topbar/Topbar'
 import PopulatedView from '../../components/dashboard/PopulatedView/PopulatedView'
 import EmptyView     from '../../components/dashboard/EmptyView/EmptyView'
 import { STATS } from '../../data/dashboardData'
+import { supabase } from '../../lib/supabase'
 import './DashboardPage.css'
 
 type Role  = 'student' | 'parent'
@@ -18,14 +19,27 @@ const STAT_ICON: Record<string, React.ReactNode> = {
 }
 
 export default function DashboardPage() {
-  const [role,    setRole]    = useState<Role>('student')
-  const [state,   setState]   = useState<State>('populated')
-  const [active,  setActive]  = useState('dashboard')
-  const [sideOpen, setSideOpen] = useState(false)
+  const [role,      setRole]      = useState<Role>('student')
+  const [state,     setState]     = useState<State>('populated')
+  const [active,    setActive]    = useState('dashboard')
+  const [sideOpen,  setSideOpen]  = useState(false)
+  const [appStatus, setAppStatus] = useState<string | null>(null)
 
   useEffect(() => {
     document.body.classList.add('dashboard-page')
     return () => document.body.classList.remove('dashboard-page')
+  }, [])
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase
+        .from('teacher_applications')
+        .select('status')
+        .eq('user_id', user.id)
+        .maybeSingle()
+        .then(({ data }) => setAppStatus(data?.status ?? null))
+    })
   }, [])
 
   const isEmpty = state === 'empty'
@@ -52,6 +66,32 @@ export default function DashboardPage() {
           <Topbar role={role} onRole={setRole} onOpenMenu={() => setSideOpen(true)} />
 
           <div className="canvas">
+            {appStatus === 'approved' && (
+              <div className="app-verified-banner">
+                <div className="avb-icon" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4 12 14.01l-3-3"/></svg>
+                </div>
+                <div className="avb-body">
+                  <p className="avb-title">You're a verified Ustaad teacher</p>
+                  <p className="avb-sub">Your application has been approved. Your teacher profile is now live and students can find and book sessions with you.</p>
+                </div>
+                <span className="avb-badge">Verified</span>
+              </div>
+            )}
+
+            {appStatus === 'pending' && (
+              <div className="app-pending-banner">
+                <div className="apb-icon" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </div>
+                <div className="apb-body">
+                  <p className="apb-title">Teaching application under review</p>
+                  <p className="apb-sub">We're verifying your details and documents. Expect a decision within 2–3 business days — we'll notify you by email and WhatsApp.</p>
+                </div>
+                <span className="apb-badge">Pending</span>
+              </div>
+            )}
+
             {/* Prototype state toggle */}
             <div className="state-toggle">
               <span className="lbl">Preview state</span>

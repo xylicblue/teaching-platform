@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import SocialButtons from '../SocialButtons/SocialButtons'
+import { supabase, isSupabaseConfigured } from '../../../lib/supabase'
 import './SignInForm.css'
 
 type Props = {
@@ -14,6 +15,7 @@ export default function SignInForm({ onSwitch, onSuccess }: Props) {
   const [showPw,   setShowPw]   = useState(false)
   const [remember, setRemember] = useState(true)
   const [errors,   setErrors]   = useState<Record<string, string>>({})
+  const [apiError, setApiError] = useState('')
   const [loading,  setLoading]  = useState(false)
 
   function validate() {
@@ -26,11 +28,41 @@ export default function SignInForm({ onSwitch, onSuccess }: Props) {
     return Object.keys(e).length === 0
   }
 
-  function handleSubmit(ev: React.FormEvent) {
+  async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
     if (!validate()) return
     setLoading(true)
-    setTimeout(() => onSuccess(email.split('@')[0] || 'Ahmed'), 1300)
+    setApiError('')
+
+    if (!isSupabaseConfigured) {
+      setTimeout(() => { setLoading(false); onSuccess(email.split('@')[0] || 'Ahmed') }, 1300)
+      return
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (error) {
+      setApiError(
+        error.message === 'Invalid login credentials'
+          ? 'Incorrect email or password.'
+          : error.message
+      )
+      setLoading(false)
+      return
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('first_name')
+      .eq('id', data.user.id)
+      .single()
+
+    const name = (profile as { first_name: string | null } | null)?.first_name
+      || data.user.email?.split('@')[0]
+      || 'there'
+
+    setLoading(false)
+    onSuccess(name)
   }
 
   return (
@@ -52,7 +84,7 @@ export default function SignInForm({ onSwitch, onSuccess }: Props) {
             <input
               id="si-email" type="email" placeholder="you@example.com"
               autoComplete="email" value={email}
-              onChange={e => { setEmail(e.target.value); setErrors(x => ({ ...x, email: '' })) }}
+              onChange={e => { setEmail(e.target.value); setErrors(x => ({ ...x, email: '' })); setApiError('') }}
             />
           </div>
           {errors.email && <p className="hint hint--error">{errors.email}</p>}
@@ -65,7 +97,7 @@ export default function SignInForm({ onSwitch, onSuccess }: Props) {
               id="si-password" type={showPw ? 'text' : 'password'}
               placeholder="Enter your password"
               autoComplete="current-password" value={password}
-              onChange={e => { setPassword(e.target.value); setErrors(x => ({ ...x, password: '' })) }}
+              onChange={e => { setPassword(e.target.value); setErrors(x => ({ ...x, password: '' })); setApiError('') }}
             />
             <button type="button" className="toggle-pw"
               aria-label={showPw ? 'Hide password' : 'Show password'}
@@ -90,6 +122,8 @@ export default function SignInForm({ onSwitch, onSuccess }: Props) {
           </label>
           <Link className="forgot" to="/forgot-password">Forgot password?</Link>
         </div>
+
+        {apiError && <p className="hint hint--error" role="alert" style={{ marginBottom: 'var(--s2)' }}>{apiError}</p>}
 
         <button type="submit" className={`btn btn-primary submit${loading ? ' loading' : ''}`} disabled={loading}>
           Sign in

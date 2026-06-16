@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase, isSupabaseConfigured } from '../../../lib/supabase'
 import './SocialButtons.css'
 
 type Props = {
@@ -40,20 +41,30 @@ export default function SocialButtons({ mode, onSuccess, onSwitchToRole, compact
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
   const [showMore, setShowMore] = useState(false)
 
-  function handleClick(name: string) {
+  async function handleClick(name: string) {
     if (loadingProvider) return
+
+    // Google: use real Supabase OAuth when configured
+    if (name === 'Google' && isSupabaseConfigured) {
+      const redirect = new URLSearchParams(window.location.search).get('redirect')
+      if (redirect) sessionStorage.setItem('postAuthRedirect', redirect)
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      })
+      return
+    }
+
+    // Other providers: prototype mock
     setLoadingProvider(name)
     setTimeout(() => {
       setLoadingProvider(null)
-      if (mode === 'signup') {
-        onSwitchToRole()
-      } else {
-        onSuccess('Ahmed')
-      }
+      if (mode === 'signup') onSwitchToRole()
+      else onSuccess('Ahmed')
     }, 1400)
   }
 
-  const primary = PROVIDERS.filter(p => p.primary)
+  const primary   = PROVIDERS.filter(p => p.primary)
   const secondary = PROVIDERS.filter(p => !p.primary)
 
   return (

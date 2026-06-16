@@ -197,6 +197,16 @@
   gap: 5px;
 }
 
+@media (max-width: 380px) {
+  .bookcard-head { padding: var(--s4); }
+  .bc-avail { padding: 0 var(--s4) var(--s3); }
+  .cal { gap: 3px; }
+  .cal .dow { font-size: 9px; letter-spacing: 0; }
+  .cal .day { font-size: 11px; }
+  .cal .day .availdot { width: 4px; height: 4px; }
+  .bookcard-foot { padding: var(--s3) var(--s4) var(--s4); }
+}
+
 /* ── watching nudge ── */
 .watching {
   display: flex;

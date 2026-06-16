@@ -107,3 +107,8 @@
 .for-teachers__secondary-link:hover {
   color: #1F4A3D;
 }
+
+@media (max-width: 480px) {
+  .for-teachers { padding: 56px 16px; }
+  .for-teachers__cta { width: 100%; justify-content: center; }
+}

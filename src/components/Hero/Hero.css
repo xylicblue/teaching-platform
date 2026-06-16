@@ -221,4 +221,18 @@
   .fc-2 { width: 195px; }
   .fc-3 { width: 210px; }
   .fc-4 { width: 185px; }
+  .float-1, .float-2 { display: none; }
+}
+
+@media (max-width: 480px) {
+  .hero { padding: 36px 0 48px; }
+  .hero-h1 { font-size: 32px; }
+  .hero-lede { font-size: 16px; }
+  .hero-collage { height: 290px; }
+  .fc-1 { width: 168px; top: 4px; }
+  .fc-2 { width: 162px; top: 80px; }
+  .fc-3 { width: 172px; top: 196px; left: 16px; }
+  .fc-4 { width: 152px; top: 296px; }
+  .hero-trust { gap: 14px; }
+  .ht b { font-size: 18px; }
 }

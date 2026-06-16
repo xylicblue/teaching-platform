@@ -77,3 +77,16 @@
 .testimonial__link:hover {
   color: #C9923B;
 }
+
+@media (max-width: 768px) {
+  .testimonial { padding: 64px 24px; }
+  .testimonial__decoration { font-size: 100px; margin-bottom: 10px; }
+  .testimonial__quote { margin-bottom: 28px; }
+}
+
+@media (max-width: 480px) {
+  .testimonial { padding: 48px 16px; }
+  .testimonial__decoration { font-size: 72px; }
+  .testimonial__footer { flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .testimonial__rule { display: none; }
+}

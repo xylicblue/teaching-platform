@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase, isSupabaseConfigured } from '../../../lib/supabase'
 
 type Role = 'student' | 'parent' | 'teacher'
 
@@ -50,13 +52,57 @@ type Props = {
 }
 
 export default function RoleSelection({ onSuccess }: Props) {
+  const navigate  = useNavigate()
   const [selected, setSelected] = useState<Role | null>(null)
   const [loading,  setLoading]  = useState(false)
+  const [apiError, setApiError] = useState('')
 
-  function handleContinue() {
+  async function handleContinue() {
     if (!selected) return
     setLoading(true)
-    setTimeout(() => onSuccess(DEMO_NAMES[selected], selected), 1200)
+    setApiError('')
+
+    // Teacher → skip role update, go straight to application form
+    if (selected === 'teacher') {
+      setLoading(false)
+      navigate('/apply')
+      return
+    }
+
+    if (!isSupabaseConfigured) {
+      setTimeout(() => { setLoading(false); onSuccess(DEMO_NAMES[selected], selected) }, 1200)
+      return
+    }
+
+    const { data: { user }, error: userErr } = await supabase.auth.getUser()
+    if (!user || userErr) {
+      setApiError('Session expired. Please sign in again.')
+      setLoading(false)
+      return
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: selected })
+      .eq('id', user.id)
+
+    if (error) {
+      setApiError(error.message)
+      setLoading(false)
+      return
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('first_name')
+      .eq('id', user.id)
+      .single()
+
+    const name = (profile as { first_name: string | null } | null)?.first_name
+      || DEMO_NAMES[selected]
+
+    setLoading(false)
+    onSuccess(name, selected)
   }
 
   return (
@@ -71,7 +117,7 @@ export default function RoleSelection({ onSuccess }: Props) {
             key={r.id}
             className="role-card"
             aria-pressed={selected === r.id}
-            onClick={() => setSelected(r.id)}
+            onClick={() => { setSelected(r.id); setApiError('') }}
           >
             <span className="ricon">{r.icon}</span>
             <div className="rc-main">
@@ -87,6 +133,14 @@ export default function RoleSelection({ onSuccess }: Props) {
         ))}
       </div>
 
+      {selected === 'teacher' && (
+        <p className="hint" style={{ marginBottom: 'var(--s2)', color: 'var(--slate)' }}>
+          You'll complete a short application form to become a verified teacher.
+        </p>
+      )}
+
+      {apiError && <p className="hint hint--error" role="alert">{apiError}</p>}
+
       {selected && (
         <div className="role-continue">
           <button
@@ -94,7 +148,7 @@ export default function RoleSelection({ onSuccess }: Props) {
             onClick={handleContinue}
             disabled={loading}
           >
-            Continue
+            {selected === 'teacher' ? 'Start application →' : 'Continue'}
             {loading && <span className="spin"><span className="spinner" aria-label="Continuing…" /></span>}
           </button>
         </div>

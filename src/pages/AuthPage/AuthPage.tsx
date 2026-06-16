@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import SignInForm    from '../../components/auth/SignInForm/SignInForm'
 import SignUpForm    from '../../components/auth/SignUpForm/SignUpForm'
 import RoleSelection from '../../components/auth/RoleSelection/RoleSelection'
 import SuccessScreen from '../../components/auth/SuccessScreen/SuccessScreen'
+import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import './AuthPage.css'
 
 type View = 'signin' | 'signup' | 'role'
@@ -18,8 +19,19 @@ const AVATARS = [
 ]
 
 export default function AuthPage() {
+  const navigate = useNavigate()
+  const [searchParams]  = useSearchParams()
+  const redirectAfterAuth = searchParams.get('redirect') ?? undefined
   const [view,    setView]    = useState<View>('signin')
   const [success, setSuccess] = useState<SuccessState | null>(null)
+
+  // Redirect already-authenticated users
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate(redirectAfterAuth ?? '/dashboard', { replace: true })
+    })
+  }, [navigate, redirectAfterAuth])
 
   const showPanel = view !== 'role'
 
@@ -28,10 +40,9 @@ export default function AuthPage() {
       <div className="auth-wrap">
         <div className={`auth-body${showPanel ? ' auth-body--split' : ' auth-body--center'}`}>
 
-          {/* ── Editorial sidebar — also carries the brand/nav ── */}
+          {/* ── Editorial sidebar ── */}
           {showPanel && (
             <aside className="auth-editorial">
-              {/* Brand row */}
               <div className="ae-brand">
                 <Link className="ae-wordmark display" to="/">Ustaad</Link>
                 <Link className="ae-back" to="/tutors">
@@ -42,7 +53,6 @@ export default function AuthPage() {
                 </Link>
               </div>
 
-              {/* Editorial content — vertically centred by flex */}
               <div className="ae-content">
                 <span className="ae-eyebrow">Trusted by thousands of families</span>
                 <h2 className="ae-headline display">
@@ -68,7 +78,6 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="ae-foot">
                 <div className="ae-av-row" aria-hidden="true">
                   {AVATARS.map(a => (
@@ -82,7 +91,6 @@ export default function AuthPage() {
 
           {/* ── Form column ── */}
           <div className="auth-form-col">
-            {/* Minimal wordmark for the role screen (no sidebar) */}
             {!showPanel && (
               <Link className="ae-wordmark display auth-role-mark" to="/">Ustaad</Link>
             )}
@@ -116,6 +124,7 @@ export default function AuthPage() {
           name={success.name}
           role={success.role}
           isSignIn={success.isSignIn}
+          redirectTo={redirectAfterAuth}
         />
       )}
     </>

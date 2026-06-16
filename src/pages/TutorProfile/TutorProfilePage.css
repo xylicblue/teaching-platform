@@ -72,3 +72,7 @@
     padding: var(--s5) 0 calc(var(--s9) + 60px);
   }
 }
+
+@media (max-width: 480px) {
+  .profile { padding: var(--s4) 0 calc(var(--s8) + 60px); }
+}

@@ -1,26 +1,120 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import { supabase } from '../../lib/supabase'
+import type { User } from '@supabase/supabase-js'
 import './Navbar.css'
 
-export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
+function getDisplayName(user: User): string {
+  return (
+    user.user_metadata?.first_name ||
+    user.user_metadata?.name?.split(' ')[0] ||
+    user.email?.split('@')[0] ||
+    'You'
+  )
+}
 
+export default function Navbar() {
+  const [scrolled,   setScrolled]   = useState(false)
+  const [menuOpen,   setMenuOpen]   = useState(false)
+  const [user,       setUser]       = useState<User | null>(null)
+  const [dropOpen,   setDropOpen]   = useState(false)
+  const [appStatus,  setAppStatus]  = useState<string | null>(null)
+  const [userRole,   setUserRole]   = useState<string | null>(null)
+  const dropRef = useRef<HTMLDivElement>(null)
+
+  // Scroll listener
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Body scroll lock when mobile menu open
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
+  // Auth state
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Fetch teacher application status whenever user changes.
+  // Show cached value immediately so the dot doesn't flash away on remount.
+  useEffect(() => {
+    if (!user) {
+      setAppStatus(null)
+      setUserRole(null)
+      sessionStorage.removeItem('_ust_app_status')
+      sessionStorage.removeItem('_ust_role')
+      return
+    }
+    const cached = sessionStorage.getItem('_ust_app_status')
+    if (cached) setAppStatus(cached)
+    const cachedRole = sessionStorage.getItem('_ust_role')
+    if (cachedRole) setUserRole(cachedRole)
+
+    supabase
+      .from('teacher_applications')
+      .select('status')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const s = data?.status ?? null
+        setAppStatus(s)
+        if (s) sessionStorage.setItem('_ust_app_status', s)
+        else   sessionStorage.removeItem('_ust_app_status')
+      })
+
+    supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        const r = data?.role ?? null
+        setUserRole(r)
+        if (r) sessionStorage.setItem('_ust_role', r)
+        else   sessionStorage.removeItem('_ust_role')
+      })
+  }, [user])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropOpen) return
+    function onOutside(e: MouseEvent) {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        setDropOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onOutside)
+    return () => document.removeEventListener('mousedown', onOutside)
+  }, [dropOpen])
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    sessionStorage.removeItem('_ust_app_status')
+    sessionStorage.removeItem('_ust_role')
+    setDropOpen(false)
+    setMenuOpen(false)
+    window.location.href = '/'
+  }
+
+  const displayName = user ? getDisplayName(user) : null
+  const avatarUrl   = user?.user_metadata?.avatar_url as string | undefined
+
   return (
     <>
       <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
         <div className="navbar__inner">
-          <a href="/" className="navbar__wordmark" aria-label="Ilm — home">Ilm</a>
+          <a href="/" className="navbar__wordmark" aria-label="Ustaad — home">Ustaad</a>
 
           <div className="navbar__search" role="search">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -31,15 +125,85 @@ export default function Navbar() {
           </div>
 
           <nav className="navbar__nav" aria-label="Main navigation">
-            <a href="#subjects" className="navbar__nav-link">Browse</a>
+            <a href="#subjects"     className="navbar__nav-link">Browse</a>
             <a href="#how-it-works" className="navbar__nav-link">How it works</a>
-            <a href="#parents" className="navbar__nav-link">For Parents</a>
-            <a href="#teachers" className="navbar__nav-link">Teach with us</a>
+            <a href="#parents"      className="navbar__nav-link">For Parents</a>
+            <a href="#teachers"     className="navbar__nav-link">Teach with us</a>
           </nav>
 
           <div className="navbar__actions">
-            <a href="/signin" className="navbar__signin">Sign in</a>
-            <a href="/tutors" className="navbar__cta">Find a tutor</a>
+            {user ? (
+              /* ── Logged-in user chip ── */
+              <div className="navbar__user" ref={dropRef}>
+                <button
+                  className="navbar__user-chip"
+                  onClick={() => setDropOpen(s => !s)}
+                  aria-expanded={dropOpen}
+                  aria-haspopup="menu"
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="navbar__av" />
+                  ) : (
+                    <span className="navbar__av navbar__av--initials" aria-hidden="true">
+                      {displayName!.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="navbar__user-name">{displayName}</span>
+                  {userRole === 'teacher' ? (
+                    <span className="navbar__verified-dot" title="Verified teacher" />
+                  ) : appStatus === 'pending' ? (
+                    <span className="navbar__pending-dot" title="Teaching application pending" />
+                  ) : null}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`navbar__drop-caret${dropOpen ? ' open' : ''}`}>
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+
+                {dropOpen && (
+                  <div className="navbar__dropdown" role="menu">
+                    {userRole === 'admin' && (
+                      <Link className="navbar__drop-item navbar__drop-item--admin" to="/admin" onClick={() => setDropOpen(false)} role="menuitem">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                        Admin dashboard
+                      </Link>
+                    )}
+                    <Link className="navbar__drop-item" to="/dashboard" onClick={() => setDropOpen(false)} role="menuitem">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                      My dashboard
+                    </Link>
+                    {userRole === 'teacher' ? (
+                      <div className="navbar__drop-item navbar__drop-item--status navbar__drop-item--verified" role="status">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4 12 14.01l-3-3"/></svg>
+                        Verified teacher
+                        <span className="navbar__drop-badge navbar__drop-badge--verified">Verified</span>
+                      </div>
+                    ) : appStatus === 'pending' ? (
+                      <div className="navbar__drop-item navbar__drop-item--status" role="status">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        Application pending
+                        <span className="navbar__drop-badge">Under review</span>
+                      </div>
+                    ) : (
+                      <Link className="navbar__drop-item" to="/apply" onClick={() => setDropOpen(false)} role="menuitem">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+                        Apply to teach
+                      </Link>
+                    )}
+                    <div className="navbar__drop-sep" role="separator" />
+                    <button className="navbar__drop-item navbar__drop-item--danger" onClick={handleSignOut} role="menuitem">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* ── Logged-out actions ── */
+              <>
+                <a href="/signin" className="navbar__signin">Sign in</a>
+                <a href="/tutors" className="navbar__cta">Find a tutor</a>
+              </>
+            )}
           </div>
 
           <button
@@ -55,26 +219,58 @@ export default function Navbar() {
         </div>
       </header>
 
+      {/* ── Mobile overlay ── */}
       <div
         className={`navbar__mobile-overlay ${menuOpen ? 'navbar__mobile-overlay--open' : ''}`}
         aria-hidden={!menuOpen}
       >
         <div className="navbar__mobile-header">
-          <a href="/" className="navbar__wordmark navbar__wordmark--dark">Ilm</a>
+          <a href="/" className="navbar__wordmark navbar__wordmark--dark">Ustaad</a>
           <button className="navbar__mobile-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
         </div>
+
         <nav className="navbar__mobile-nav">
           {[['Browse','#subjects'],['How it works','#how-it-works'],['For Parents','#parents'],['Teach with us','#teachers']].map(([label, href]) => (
             <a key={label} href={href} className="navbar__mobile-link" onClick={() => setMenuOpen(false)}>{label}</a>
           ))}
         </nav>
+
         <div className="navbar__mobile-actions">
-          <a href="/signin" className="navbar__mobile-signin">Sign in</a>
-          <a href="/tutors" className="navbar__cta navbar__cta--large">Find a tutor</a>
+          {user ? (
+            <>
+              <div className="navbar__mobile-user">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="navbar__av navbar__av--lg" />
+                ) : (
+                  <span className="navbar__av navbar__av--initials navbar__av--lg" aria-hidden="true">
+                    {displayName!.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <div>
+                  <div className="navbar__mobile-user-name">{displayName}</div>
+                  <div className="navbar__mobile-user-email">{user.email}</div>
+                </div>
+              </div>
+              <Link to="/dashboard" className="navbar__cta navbar__cta--large" onClick={() => setMenuOpen(false)}>
+                My dashboard
+              </Link>
+              <Link to="/apply" className="navbar__mobile-signin" onClick={() => setMenuOpen(false)}>
+                Apply to teach →
+              </Link>
+              <button className="navbar__mobile-signout" onClick={handleSignOut}>
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <a href="/signin" className="navbar__mobile-signin">Sign in</a>
+              <a href="/tutors" className="navbar__cta navbar__cta--large">Find a tutor</a>
+            </>
+          )}
         </div>
       </div>
     </>

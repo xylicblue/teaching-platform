@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import SocialButtons from '../SocialButtons/SocialButtons'
+import { supabase, isSupabaseConfigured } from '../../../lib/supabase'
 import './SignUpForm.css'
 
 type Props = {
@@ -39,6 +40,7 @@ export default function SignUpForm({ onSwitch, onToRole }: Props) {
   const [phone,     setPhone]     = useState('')
   const [agree,     setAgree]     = useState(false)
   const [errors,    setErrors]    = useState<Record<string, string>>({})
+  const [apiError,  setApiError]  = useState('')
   const [loading,   setLoading]   = useState(false)
 
   const score = pwScore(password)
@@ -55,11 +57,58 @@ export default function SignUpForm({ onSwitch, onToRole }: Props) {
     return Object.keys(e).length === 0
   }
 
-  function handleSubmit(ev: React.FormEvent) {
+  async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
     if (!validate()) return
     setLoading(true)
-    setTimeout(() => { setLoading(false); onToRole() }, 1300)
+    setApiError('')
+
+    if (!isSupabaseConfigured) {
+      setTimeout(() => { setLoading(false); onToRole() }, 1300)
+      return
+    }
+
+    const countryCode = country === 'Pakistan' ? 'PK'
+      : country === 'India' ? 'IN'
+      : country === 'Bangladesh' ? 'BD'
+      : country === 'United Arab Emirates' ? 'AE'
+      : country === 'United Kingdom' ? 'GB'
+      : country
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName.trim(),
+          last_name:  lastName.trim() || null,
+          phone:      phone || null,
+          country:    countryCode,
+        },
+      },
+    })
+
+    if (error) {
+      const msg = error.message.toLowerCase()
+      if (msg.includes('already registered') || msg.includes('already in use') || msg.includes('email_exists')) {
+        setErrors(e => ({ ...e, email: 'This email is already registered. Sign in instead, or use "Continue with Google" if you signed up that way.' }))
+      } else {
+        setApiError(error.message)
+      }
+      setLoading(false)
+      return
+    }
+
+    // With email confirmation ON, Supabase returns error: null but identities: []
+    // when the email is already taken — it silently no-ops to prevent enumeration.
+    if (!data.user?.identities?.length) {
+      setErrors(e => ({ ...e, email: 'This email is already registered. Sign in instead, or use "Continue with Google" if you signed up that way.' }))
+      setLoading(false)
+      return
+    }
+
+    setLoading(false)
+    onToRole()
   }
 
   return (
@@ -81,7 +130,7 @@ export default function SignUpForm({ onSwitch, onToRole }: Props) {
             <div className="input-wrap">
               <input id="su-first" type="text" placeholder="Ahmed"
                 autoComplete="given-name" value={firstName}
-                onChange={e => { setFirstName(e.target.value); clearErr('firstName') }}
+                onChange={e => { setFirstName(e.target.value); clearErr('firstName'); setApiError('') }}
               />
             </div>
             {errors.firstName && <p className="hint hint--error">{errors.firstName}</p>}
@@ -103,7 +152,7 @@ export default function SignUpForm({ onSwitch, onToRole }: Props) {
           <div className="input-wrap">
             <input id="su-email" type="email" placeholder="you@example.com"
               autoComplete="email" value={email}
-              onChange={e => { setEmail(e.target.value); clearErr('email') }}
+              onChange={e => { setEmail(e.target.value); clearErr('email'); setApiError('') }}
             />
           </div>
           {errors.email && <p className="hint hint--error">{errors.email}</p>}
@@ -172,6 +221,8 @@ export default function SignUpForm({ onSwitch, onToRole }: Props) {
             {errors.agree && <span className="hint hint--error" style={{ display: 'block' }}>{errors.agree}</span>}
           </span>
         </label>
+
+        {apiError && <p className="hint hint--error" role="alert" style={{ marginBottom: 'var(--s2)' }}>{apiError}</p>}
 
         <button type="submit" className={`btn btn-primary submit${loading ? ' loading' : ''}`} disabled={loading}>
           Create account

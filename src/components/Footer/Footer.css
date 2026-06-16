@@ -170,3 +170,10 @@
   color: #3e3a34;
   margin: 0;
 }
+
+@media (max-width: 480px) {
+  .footer { padding: 48px 16px 32px; }
+  .footer__grid { grid-template-columns: 1fr; gap: 24px; }
+  .footer__bottom { margin-top: 36px; }
+  .footer__bottom-right { flex-wrap: wrap; gap: 10px; }
+}

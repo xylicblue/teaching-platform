@@ -5,6 +5,101 @@
 
 body.dashboard-page { background: var(--paper-2); color: var(--ink); }
 
+/* ── Verified teacher banner ──────────────────────────────────────────────── */
+.app-verified-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #F0F7F4;
+  border: 1px solid #A3C9B8;
+  border-left: 4px solid #3B6E54;
+  border-radius: var(--r-card);
+  padding: 16px 18px;
+  margin-bottom: var(--s5);
+}
+
+.avb-icon { flex-shrink: 0; color: #3B6E54; margin-top: 1px; }
+.avb-body { flex: 1; min-width: 0; }
+
+.avb-title {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 600;
+  color: #1C3D30;
+  margin: 0 0 4px;
+}
+
+.avb-sub {
+  font-size: 13.5px;
+  color: #2D5A47;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.avb-badge {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #3B6E54;
+  background: #E3EFE6;
+  border: 1px solid #A3C9B8;
+  border-radius: 9999px;
+  padding: 3px 10px;
+  align-self: center;
+}
+
+/* ── Pending application banner ───────────────────────────────────────────── */
+.app-pending-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #FFFBF2;
+  border: 1px solid #E8C97A;
+  border-left: 4px solid #A8741C;
+  border-radius: var(--r-card);
+  padding: 16px 18px;
+  margin-bottom: var(--s5);
+}
+
+.apb-icon {
+  flex-shrink: 0;
+  color: #A8741C;
+  margin-top: 1px;
+}
+
+.apb-body { flex: 1; min-width: 0; }
+
+.apb-title {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 600;
+  color: #5A3A0A;
+  margin: 0 0 4px;
+}
+
+.apb-sub {
+  font-size: 13.5px;
+  color: #7A5515;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.apb-badge {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7A5515;
+  background: #FBF0DC;
+  border: 1px solid #E8C97A;
+  border-radius: 9999px;
+  padding: 3px 10px;
+  align-self: center;
+}
+
 /* wordmark (ported from template marketplace.css) */
 .dash .wordmark { display: inline-flex; align-items: center; gap: 9px; font-family: var(--display);
   font-weight: 600; font-size: 20px; letter-spacing: -0.01em; color: var(--ink); }

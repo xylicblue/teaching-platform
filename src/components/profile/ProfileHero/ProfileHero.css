@@ -168,3 +168,12 @@
   .phero-av    { width: 100%; height: 260px; }
   .pstat { min-width: 50%; flex: 1 1 50%; border-bottom: 1px solid var(--cloud-2); }
 }
+
+@media (max-width: 480px) {
+  .phero-av { height: 220px; }
+  .phero-main .name { font-size: 28px; }
+  .phero-main .headline { font-size: 16px; }
+  .pstat { flex: 1 1 100%; min-width: 100%; }
+  .phero-quote { font-size: 18px; }
+  .trust-row { gap: 6px; }
+}

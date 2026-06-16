@@ -229,3 +229,7 @@
 .catalog__stream-card:hover .catalog__stream-arrow {
   transform: translateX(4px);
 }
+
+@media (max-width: 480px) {
+  .catalog { padding: 56px 16px; }
+}
