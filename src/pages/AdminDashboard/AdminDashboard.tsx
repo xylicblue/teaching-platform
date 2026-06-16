@@ -177,7 +177,7 @@ export default function AdminDashboard() {
   /* ── Fetch all applications ─────────────────────────────────────────────────── */
   const fetchApps = useCallback(async () => {
     setAppsLoading(true)
-    const { data, error } = await supabase
+    const { data} = await supabase
       .from('teacher_applications')
       .select('*')
       .order('submitted_at', { ascending: false })
