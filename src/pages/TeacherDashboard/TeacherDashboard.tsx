@@ -956,7 +956,7 @@ function DemoCard({
 const AV_COLORS_BG = ['#1F4A3D','#163528','#7A5515','#7A2418','#5C544A','#3A3530','#2A4A3D','#4A2A1A']
 
 function ProfileEditView({
-  userId,
+  // userId,
   userName,
   bio,
   onBioChange,
