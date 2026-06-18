@@ -1,6 +1,7 @@
 import { AVATAR_COLORS } from './tutors'
 
 export type SubjectRow = {
+  id?:     string
   code:    string
   name:    string
   rating:  number
@@ -60,6 +61,7 @@ export type TutorProfile = {
   name:         string
   initials:     string
   colorIndex:   number
+  avatarUrl?:   string | null
   headline:     string
   location:     string
   languages:    string[]

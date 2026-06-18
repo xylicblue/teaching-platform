@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, Fragment } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import Navbar        from '../../components/Navbar/Navbar'
 import Footer        from '../../components/Footer/Footer'
@@ -334,15 +334,14 @@ export default function BrowsePage() {
                 </div>
               ) : (
                 rest.map((t, i) => (
-                  <>
-                    <TutorRow key={t.id} tutor={t} />
+                  <Fragment key={t.id}>
+                    <TutorRow tutor={t} />
                     {(i + 1) % 5 === 0 && BROWSE_STORIES[Math.floor(i / 5) % BROWSE_STORIES.length] && (
                       <StoryStrip
-                        key={`story-${i}`}
                         {...BROWSE_STORIES[Math.floor(i / 5) % BROWSE_STORIES.length]}
                       />
                     )}
-                  </>
+                  </Fragment>
                 ))
               )}
             </div>

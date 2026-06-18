@@ -4,6 +4,8 @@ import Sidebar       from '../../components/dashboard/Sidebar/Sidebar'
 import Topbar        from '../../components/dashboard/Topbar/Topbar'
 import PopulatedView from '../../components/dashboard/PopulatedView/PopulatedView'
 import EmptyView     from '../../components/dashboard/EmptyView/EmptyView'
+import TeacherDashboard from '../TeacherDashboard/TeacherDashboard'
+import AdminDashboard   from '../AdminDashboard/AdminDashboard'
 import { STATS } from '../../data/dashboardData'
 import { supabase } from '../../lib/supabase'
 import './DashboardPage.css'
@@ -23,7 +25,14 @@ export default function DashboardPage() {
   const [state,     setState]     = useState<State>('populated')
   const [active,    setActive]    = useState('dashboard')
   const [sideOpen,  setSideOpen]  = useState(false)
-  const [appStatus, setAppStatus] = useState<string | null>(null)
+  const [appStatus,    setAppStatus]    = useState<string | null>(null)
+  const [userRole,     setUserRole]     = useState<string | null>(
+    sessionStorage.getItem('_ust_role')
+  )
+  const [roleResolved, setRoleResolved] = useState(
+    !!sessionStorage.getItem('_ust_role')
+  )
+  const [teacherMode,  setTeacherMode]  = useState(false)
 
   useEffect(() => {
     document.body.classList.add('dashboard-page')
@@ -32,15 +41,42 @@ export default function DashboardPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
+      if (!user) { setRoleResolved(true); return }
       supabase
         .from('teacher_applications')
         .select('status')
         .eq('user_id', user.id)
         .maybeSingle()
         .then(({ data }) => setAppStatus(data?.status ?? null))
+
+      const cached = sessionStorage.getItem('_ust_role')
+      if (cached) { setUserRole(cached); setRoleResolved(true); return }
+
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          const r = data?.role ?? null
+          setUserRole(r)
+          if (r) sessionStorage.setItem('_ust_role', r)
+          setRoleResolved(true)
+        })
     })
   }, [])
+
+  if (!roleResolved) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'var(--paper-2)' }}>
+        <p style={{ color:'var(--slate)', fontSize:'14px' }}>Loading…</p>
+      </div>
+    )
+  }
+
+  if (userRole === 'teacher') return <TeacherDashboard />
+  if (userRole === 'admin' && teacherMode) return <TeacherDashboard onBackToAdmin={() => setTeacherMode(false)} />
+  if (userRole === 'admin') return <AdminDashboard onTeacherMode={() => setTeacherMode(true)} />
 
   const isEmpty = state === 'empty'
 

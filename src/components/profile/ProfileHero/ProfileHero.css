@@ -24,6 +24,11 @@
   color: #FAF7F2;
 }
 
+.phero-av--img {
+  display: block;
+  object-fit: cover;
+}
+
 .live-pin {
   position: absolute;
   top: 10px; left: 10px;
@@ -125,7 +130,8 @@
 
 .pstat b .star { color: var(--saffron); font-size: 18px; }
 .pstat span { display: block; font-size: 12px; color: var(--slate); margin-top: 5px; }
-.pstat .ok  { color: var(--success); }
+.pstat .ok       { color: var(--success); }
+.pstat .pstat-new { color: var(--evergreen); font-size: 16px; }
 
 /* Trust pills */
 .trust-row {

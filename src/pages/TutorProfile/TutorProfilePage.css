@@ -56,6 +56,81 @@
   color: var(--slate);
 }
 
+/* ── divider between blocks ── */
+.block-divider {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 0;
+}
+
+/* ── no-reviews note ── */
+.no-reviews-note {
+  color: var(--slate);
+  font-size: 15px;
+  margin-top: var(--s3);
+}
+
+/* ── loading skeleton ── */
+.profile-loading {
+  padding: var(--s9) 0;
+  display: flex;
+  justify-content: center;
+}
+
+.profile-loading-inner {
+  display: flex;
+  gap: var(--s5);
+  align-items: flex-start;
+  max-width: 600px;
+  width: 100%;
+  padding: 0 var(--s5);
+}
+
+.profile-loading-av {
+  width: 160px;
+  height: 180px;
+  border-radius: var(--r-lg);
+  background: var(--cloud);
+  flex: none;
+  animation: skel-pulse 1.4s ease-in-out infinite;
+}
+
+.profile-loading-lines {
+  flex: 1;
+  padding-top: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.pll {
+  border-radius: 6px;
+  background: var(--cloud);
+  animation: skel-pulse 1.4s ease-in-out infinite;
+}
+
+.pll--name  { height: 32px; width: 70%; }
+.pll--sub   { height: 18px; width: 90%; animation-delay: 0.1s; }
+.pll--sub2  { height: 18px; width: 55%; animation-delay: 0.2s; }
+
+@keyframes skel-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* ── not found ── */
+.profile-notfound {
+  padding: var(--s10) var(--s5);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s4);
+}
+
+.profile-notfound h1 { font-size: 32px; }
+.profile-notfound p  { color: var(--slate); font-size: 16px; }
+
 /* ── responsive ── */
 @media (max-width: 980px) {
   .pcols {

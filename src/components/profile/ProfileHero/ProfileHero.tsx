@@ -21,13 +21,21 @@ export default function ProfileHero({ profile }: Props) {
             Online now
           </span>
         )}
-        <span
-          className="av-lg phero-av"
-          style={{ background: AVATAR_COLORS[profile.colorIndex] }}
-          aria-label={`${profile.name} avatar`}
-        >
-          {profile.initials}
-        </span>
+        {profile.avatarUrl ? (
+          <img
+            src={profile.avatarUrl}
+            alt={`${profile.name} profile photo`}
+            className="phero-av phero-av--img"
+          />
+        ) : (
+          <span
+            className="av-lg phero-av"
+            style={{ background: AVATAR_COLORS[profile.colorIndex] }}
+            aria-label={`${profile.name} avatar`}
+          >
+            {profile.initials}
+          </span>
+        )}
         <div className="vbadge">
           {CHECK_ICON}
           Verified Tutor
@@ -47,14 +55,23 @@ export default function ProfileHero({ profile }: Props) {
 
         {/* Stat row */}
         <div className="pstats">
-          <div className="pstat">
-            <b><span className="star">★</span>{profile.rating.toFixed(1)}</b>
-            <span>{profile.reviews} reviews</span>
-          </div>
-          <div className="pstat">
-            <b>{profile.lessons.toLocaleString()}</b>
-            <span>lessons taught</span>
-          </div>
+          {profile.rating > 0 ? (
+            <div className="pstat">
+              <b><span className="star">★</span>{profile.rating.toFixed(1)}</b>
+              <span>{profile.reviews} reviews</span>
+            </div>
+          ) : (
+            <div className="pstat">
+              <b className="pstat-new">New</b>
+              <span>accepting students</span>
+            </div>
+          )}
+          {profile.lessons > 0 && (
+            <div className="pstat">
+              <b>{profile.lessons.toLocaleString()}</b>
+              <span>lessons taught</span>
+            </div>
+          )}
           <div className="pstat">
             <b className="ok">{profile.responseTime}</b>
             <span>response time</span>

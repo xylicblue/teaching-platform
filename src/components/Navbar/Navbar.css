@@ -243,6 +243,19 @@
   text-align: center;
 }
 
+.navbar__cta--admin {
+  background: var(--evergreen, #1F4A3D);
+  color: #FAF7F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.navbar__cta--admin:hover {
+  background: #163528;
+}
+
 /* ── User chip (logged-in state) ────────────────────────────────────────────── */
 .navbar__user { position: relative; }
 

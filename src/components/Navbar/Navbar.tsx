@@ -255,6 +255,12 @@ export default function Navbar() {
                   <div className="navbar__mobile-user-email">{user.email}</div>
                 </div>
               </div>
+              {userRole === 'admin' && (
+                <Link to="/admin" className="navbar__cta navbar__cta--large navbar__cta--admin" onClick={() => setMenuOpen(false)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                  Admin dashboard
+                </Link>
+              )}
               <Link to="/dashboard" className="navbar__cta navbar__cta--large" onClick={() => setMenuOpen(false)}>
                 My dashboard
               </Link>

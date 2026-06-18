@@ -158,6 +158,30 @@ body.admin-page { background: var(--paper-2); }
   margin-top: 1px;
 }
 
+.admin-teacher-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--line);
+  background: var(--evergreen-t);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--evergreen);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur), border-color var(--dur);
+  font-family: var(--sans);
+  margin-bottom: var(--s3);
+}
+.admin-teacher-mode-btn:hover {
+  background: rgba(31,74,61,0.12);
+  border-color: var(--evergreen);
+}
+.admin-teacher-mode-btn svg { flex: none; }
+
 .admin-signout-btn {
   display: block;
   width: 100%;
@@ -264,44 +288,70 @@ body.admin-page { background: var(--paper-2); }
   width: 100%;
 }
 
+/* ── Overview section labels ─────────────────────────────────────────────── */
+.admin-ov-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--slate);
+  margin: 0 0 12px;
+}
+
 /* ── Stats row ─────────────────────────────────────────────────────────────── */
 .admin-stats-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
-  margin-bottom: 36px;
+  margin-bottom: 28px;
 }
 
 .astat {
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  padding: 20px 20px 18px;
+  border-radius: var(--r-card);
+  padding: 13px 15px;
   text-align: left;
   cursor: pointer;
   transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur);
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border-top-width: 3px;
+  align-items: center;
+  gap: 12px;
 }
 
 .astat:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: var(--shadow-2);
   border-color: var(--cloud);
 }
 
-.astat--pending  { border-top-color: var(--saffron-d); }
-.astat--approved { border-top-color: var(--success); }
-.astat--rejected { border-top-color: var(--critical); }
-.astat--total    { border-top-color: var(--evergreen); }
+.astat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.astat--pending  .astat-icon { background: #FDF6EA; color: #7A5515; }
+.astat--approved .astat-icon { background: var(--success-t); color: var(--success); }
+.astat--rejected .astat-icon { background: #FAEAEA; color: var(--critical); }
+.astat--total    .astat-icon { background: var(--evergreen-t); color: var(--evergreen); }
+
+.astat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
 
 .astat-val {
   font-family: var(--display);
-  font-weight: 600;
-  font-size: 36px;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
   line-height: 1;
   color: var(--ink);
 }
@@ -895,6 +945,71 @@ body.admin-page { background: var(--paper-2); }
 
 .ad-decided--approved { background: var(--success-t); color: var(--success); }
 .ad-decided--rejected { background: #FAEAEA; color: var(--critical); }
+
+/* Course curriculum in detail panel */
+.ad-topic-list { display: flex; flex-direction: column; gap: 10px; margin-top: var(--s2); }
+
+.ad-topic {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ad-topic-n {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--slate);
+  width: 20px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.ad-topic-head {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 2px;
+}
+
+.ad-topic-plan {
+  font-size: 12px;
+  color: var(--slate);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.ad-bullet-list {
+  margin: var(--s2) 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ad-bullet-list li {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+/* Rejection note textarea */
+.ad-reject-note {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--white);
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: var(--s3);
+  transition: border-color 0.15s;
+}
+.ad-reject-note:focus { border-color: var(--evergreen); box-shadow: 0 0 0 3px rgba(31,74,61,0.1); }
 
 /* Shared btn-outline (used in confirm cancel) */
 .btn.btn-outline {

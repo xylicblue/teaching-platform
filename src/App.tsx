@@ -7,6 +7,7 @@ import AuthCallback      from './pages/AuthCallback/AuthCallback'
 import DashboardPage     from './pages/DashboardPage/DashboardPage'
 import TeacherApplyPage  from './pages/TeacherApplyPage/TeacherApplyPage'
 import AdminDashboard    from './pages/AdminDashboard/AdminDashboard'
+import CoursePage        from './pages/CoursePage/CoursePage'
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/dashboard"     element={<DashboardPage />} />
         <Route path="/apply"         element={<TeacherApplyPage />} />
         <Route path="/admin"         element={<AdminDashboard />} />
+        <Route path="/courses/:id"   element={<CoursePage />} />
       </Routes>
     </BrowserRouter>
   )

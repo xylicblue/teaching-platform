@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import './AdminDashboard.css'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
-type AdminView = 'overview' | 'applications' | 'users'
+type AdminView = 'overview' | 'applications' | 'users' | 'courses'
 type AppStatus = 'pending' | 'approved' | 'rejected'
 type AppFilter = 'all' | AppStatus
 
@@ -47,6 +47,26 @@ type UserRow = {
   role: string
   status: string
   created_at: string | null
+}
+
+type CourseRow = {
+  id: string
+  title: string
+  subject: string
+  level: string
+  exam_board: string
+  rate_per_hour: number
+  currency: string
+  course_type: string
+  duration_months: number | null
+  topics: { heading: string; plan: string }[]
+  teaching_bullets: string[]
+  lesson_plan_url: string | null
+  is_active: boolean
+  status: 'pending' | 'approved' | 'rejected'
+  admin_note: string | null
+  created_at: string
+  teacher: { first_name: string | null; last_name: string | null } | null
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
@@ -118,11 +138,12 @@ function AppTable({
 }
 
 /* ── AdminDashboard ─────────────────────────────────────────────────────────── */
-export default function AdminDashboard() {
+export default function AdminDashboard({ onTeacherMode }: { onTeacherMode?: () => void } = {}) {
   const navigate = useNavigate()
 
-  const [authChecking, setAuthChecking] = useState(true)
-  const [adminName,    setAdminName]    = useState('Admin')
+  const [authChecking,   setAuthChecking]   = useState(true)
+  const [adminName,      setAdminName]      = useState('Admin')
+  const [isAlsoTeacher,  setIsAlsoTeacher]  = useState(false)
   const [sideOpen,     setSideOpen]     = useState(false)
   const [view,         setView]         = useState<AdminView>('overview')
 
@@ -138,7 +159,17 @@ export default function AdminDashboard() {
   const [users,        setUsers]        = useState<UserRow[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
 
-  /* ── Actions ── */
+  /* ── Courses ── */
+  const [courses,        setCourses]        = useState<CourseRow[]>([])
+  const [coursesLoading, setCoursesLoading] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState<CourseRow | null>(null)
+  const [courseFilter,   setCourseFilter]   = useState<'pending' | 'all'>('pending')
+  const [rejectNoteInput, setRejectNoteInput] = useState('')
+  const [confirmCourseReject, setConfirmCourseReject] = useState(false)
+  const [courseActioning, setCourseActioning] = useState(false)
+  const [courseActionErr, setCourseActionErr] = useState('')
+
+  /* ── Actions (applications) ── */
   const [actioning,     setActioning]     = useState(false)
   const [confirmReject, setConfirmReject] = useState(false)
   const [actionError,   setActionError]   = useState('')
@@ -150,6 +181,8 @@ export default function AdminDashboard() {
     approved: apps.filter(a => a.status === 'approved').length,
     rejected: apps.filter(a => a.status === 'rejected').length,
   }
+  const pendingCourses = courses.filter(c => c.status === 'pending')
+  const filteredCourses = courseFilter === 'pending' ? pendingCourses : courses
 
   /* ── Body class ─────────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -170,6 +203,14 @@ export default function AdminDashboard() {
         navigate('/dashboard', { replace: true }); return
       }
       setAdminName(profile.display_name || profile.first_name || user.email?.split('@')[0] || 'Admin')
+
+      const { data: teacherApp } = await supabase
+        .from('teacher_applications')
+        .select('status')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      setIsAlsoTeacher(teacherApp?.status === 'approved')
+
       setAuthChecking(false)
     })
   }, [navigate])
@@ -196,12 +237,27 @@ export default function AdminDashboard() {
     supabase
       .from('profiles')
       .select('id, display_name, first_name, role, status, created_at')
-      .order('submitted_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .then(({ data }) => {
         setUsers((data as UserRow[]) ?? [])
         setUsersLoading(false)
       })
   }, [view, users.length])
+
+  /* ── Fetch courses (lazy, on first visit to Courses view) ───────────────────── */
+  const fetchCourses = useCallback(async () => {
+    setCoursesLoading(true)
+    const { data } = await supabase
+      .from('courses')
+      .select('*, teacher:profiles!teacher_id(first_name, last_name)')
+      .order('created_at', { ascending: false })
+    setCourses((data as CourseRow[]) ?? [])
+    setCoursesLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (!authChecking) fetchCourses()
+  }, [authChecking, fetchCourses])
 
   /* ── Signed URLs for selected application documents ─────────────────────────── */
   useEffect(() => {
@@ -264,6 +320,47 @@ export default function AdminDashboard() {
     setSelected(upd)
     setConfirmReject(false)
     setActioning(false)
+  }
+
+  /* ── Course approve / reject ────────────────────────────────────────────────── */
+  async function handleApproveCourse() {
+    if (!selectedCourse || courseActioning) return
+    setCourseActioning(true)
+    setCourseActionErr('')
+    const { error } = await supabase
+      .from('courses')
+      .update({ status: 'approved', is_active: true, admin_note: null })
+      .eq('id', selectedCourse.id)
+    if (error) { setCourseActionErr(error.message); setCourseActioning(false); return }
+    const upd: CourseRow = { ...selectedCourse, status: 'approved', is_active: true }
+    setCourses(prev => prev.map(c => c.id === selectedCourse.id ? upd : c))
+    setSelectedCourse(upd)
+    setCourseActioning(false)
+  }
+
+  async function handleRejectCourse() {
+    if (!selectedCourse || courseActioning) return
+    setCourseActioning(true)
+    setCourseActionErr('')
+    const { error } = await supabase
+      .from('courses')
+      .update({ status: 'rejected', is_active: false, admin_note: rejectNoteInput.trim() || null })
+      .eq('id', selectedCourse.id)
+    if (error) { setCourseActionErr(error.message); setCourseActioning(false); return }
+    const upd: CourseRow = { ...selectedCourse, status: 'rejected', admin_note: rejectNoteInput.trim() || null }
+    setCourses(prev => prev.map(c => c.id === selectedCourse.id ? upd : c))
+    setSelectedCourse(upd)
+    setConfirmCourseReject(false)
+    setRejectNoteInput('')
+    setCourseActioning(false)
+  }
+
+  function openCourse(course: CourseRow) {
+    setSelectedCourse(course)
+    setConfirmCourseReject(false)
+    setRejectNoteInput('')
+    setCourseActionErr('')
+    if (view !== 'courses') setView('courses')
   }
 
   function openApp(app: Application) {
@@ -351,9 +448,29 @@ export default function AdminDashboard() {
             </svg>
             Users
           </button>
+
+          {/* Courses */}
+          <button
+            className={`admin-nav-item${view === 'courses' ? ' active' : ''}`}
+            onClick={() => navTo('courses')}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            Courses
+            {pendingCourses.length > 0 && (
+              <span className="admin-nav-badge">{pendingCourses.length}</span>
+            )}
+          </button>
         </nav>
 
         <div className="admin-side-foot">
+          {isAlsoTeacher && onTeacherMode && (
+            <button className="admin-teacher-mode-btn" onClick={onTeacherMode}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              Teacher dashboard
+            </button>
+          )}
           <div className="admin-side-user">
             <div className="asu-av" aria-hidden="true">{adminName.charAt(0).toUpperCase()}</div>
             <div>
@@ -381,7 +498,7 @@ export default function AdminDashboard() {
             </svg>
           </button>
           <h1 className="admin-topbar-title">
-            {view === 'overview' ? 'Overview' : view === 'applications' ? 'Teacher applications' : 'Users'}
+            {view === 'overview' ? 'Overview' : view === 'applications' ? 'Teacher applications' : view === 'courses' ? 'Course approvals' : 'Users'}
           </h1>
           <div className="admin-topbar-right">
             <span className="admin-topbar-name">{adminName}</span>
@@ -395,22 +512,75 @@ export default function AdminDashboard() {
           {/* ── OVERVIEW ─────────────────────────────────────────────────────── */}
           {view === 'overview' && (
             <>
+              <p className="admin-ov-section-label">Teacher applications</p>
               <div className="admin-stats-row">
-                {([
-                  { label: 'Pending review', val: stats.pending,  mod: 'pending',  f: 'pending'  as AppFilter },
-                  { label: 'Approved',       val: stats.approved, mod: 'approved', f: 'approved' as AppFilter },
-                  { label: 'Rejected',       val: stats.rejected, mod: 'rejected', f: 'rejected' as AppFilter },
-                  { label: 'Total received', val: stats.total,    mod: 'total',    f: 'all'      as AppFilter },
-                ] as const).map(({ label, val, mod, f }) => (
-                  <button
-                    key={mod}
-                    className={`astat astat--${mod}`}
-                    onClick={() => { setFilter(f); navTo('applications') }}
-                  >
-                    <span className="astat-val">{val}</span>
-                    <span className="astat-lbl">{label}</span>
-                  </button>
-                ))}
+                <button className="astat astat--pending" onClick={() => { setFilter('pending'); navTo('applications') }}>
+                  <span className="astat-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </span>
+                  <span className="astat-info">
+                    <span className="astat-val">{stats.pending}</span>
+                    <span className="astat-lbl">Pending review</span>
+                  </span>
+                </button>
+                <button className="astat astat--approved" onClick={() => { setFilter('approved'); navTo('applications') }}>
+                  <span className="astat-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+                  </span>
+                  <span className="astat-info">
+                    <span className="astat-val">{stats.approved}</span>
+                    <span className="astat-lbl">Approved</span>
+                  </span>
+                </button>
+                <button className="astat astat--rejected" onClick={() => { setFilter('rejected'); navTo('applications') }}>
+                  <span className="astat-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
+                  </span>
+                  <span className="astat-info">
+                    <span className="astat-val">{stats.rejected}</span>
+                    <span className="astat-lbl">Rejected</span>
+                  </span>
+                </button>
+                <button className="astat astat--total" onClick={() => { setFilter('all'); navTo('applications') }}>
+                  <span className="astat-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </span>
+                  <span className="astat-info">
+                    <span className="astat-val">{stats.total}</span>
+                    <span className="astat-lbl">Total received</span>
+                  </span>
+                </button>
+              </div>
+
+              <p className="admin-ov-section-label" style={{ marginTop: 'var(--s5)' }}>Courses</p>
+              <div className="admin-stats-row">
+                <button className="astat astat--pending" onClick={() => { setCourseFilter('pending'); navTo('courses') }}>
+                  <span className="astat-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </span>
+                  <span className="astat-info">
+                    <span className="astat-val">{pendingCourses.length}</span>
+                    <span className="astat-lbl">Pending approval</span>
+                  </span>
+                </button>
+                <button className="astat astat--approved" onClick={() => { setCourseFilter('all'); navTo('courses') }}>
+                  <span className="astat-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </span>
+                  <span className="astat-info">
+                    <span className="astat-val">{courses.filter(c => c.status === 'approved').length}</span>
+                    <span className="astat-lbl">Live courses</span>
+                  </span>
+                </button>
+                <button className="astat astat--total" onClick={() => { setCourseFilter('all'); navTo('courses') }}>
+                  <span className="astat-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                  </span>
+                  <span className="astat-info">
+                    <span className="astat-val">{courses.length}</span>
+                    <span className="astat-lbl">Total submitted</span>
+                  </span>
+                </button>
               </div>
 
               <div className="admin-section">
@@ -507,6 +677,76 @@ export default function AdminDashboard() {
                 </table>
               </div>
             )
+          )}
+
+          {/* ── COURSES ───────────────────────────────────────────────────────── */}
+          {view === 'courses' && (
+            <>
+              <div className="admin-filter-row">
+                <button
+                  className={`afilter${courseFilter === 'pending' ? ' active' : ''}`}
+                  onClick={() => setCourseFilter('pending')}
+                >
+                  Pending
+                  <span className="afilter-n afilter-n--pending">{pendingCourses.length}</span>
+                </button>
+                <button
+                  className={`afilter${courseFilter === 'all' ? ' active' : ''}`}
+                  onClick={() => setCourseFilter('all')}
+                >
+                  All
+                  <span className="afilter-n afilter-n--total">{courses.length}</span>
+                </button>
+              </div>
+
+              {coursesLoading ? (
+                <p className="admin-loading-txt">Loading…</p>
+              ) : filteredCourses.length === 0 ? (
+                <div className="admin-empty-box">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  <p>No {courseFilter === 'pending' ? 'pending ' : ''}courses.</p>
+                </div>
+              ) : (
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Course</th>
+                        <th>Teacher</th>
+                        <th>Level</th>
+                        <th>Rate</th>
+                        <th>Status</th>
+                        <th aria-hidden="true" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCourses.map(course => (
+                        <tr
+                          key={course.id}
+                          className={selectedCourse?.id === course.id ? 'selected' : ''}
+                          onClick={() => openCourse(course)}
+                          tabIndex={0}
+                          onKeyDown={e => e.key === 'Enter' && openCourse(course)}
+                        >
+                          <td className="at-name">{course.title}</td>
+                          <td className="at-muted">
+                            {course.teacher
+                              ? [course.teacher.first_name, course.teacher.last_name].filter(Boolean).join(' ')
+                              : '—'}
+                          </td>
+                          <td className="at-muted">{course.level}</td>
+                          <td className="at-muted">{course.currency} {Number(course.rate_per_hour).toLocaleString()}/hr</td>
+                          <td>
+                            <span className={`astatus astatus--${course.status}`}>{STATUS_LABEL[course.status]}</span>
+                          </td>
+                          <td className="at-arr" aria-hidden="true">›</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
 
         </div>
@@ -780,6 +1020,181 @@ export default function AdminDashboard() {
                   {selected.status === 'approved'
                     ? '✓ Approved — teacher role has been granted.'
                     : '✗ Rejected — application has been closed.'}
+                </div>
+              )}
+            </div>
+          </aside>
+        </>
+      )}
+
+      {/* ── Course detail panel ──────────────────────────────────────────────── */}
+      {selectedCourse && (
+        <>
+          <div className="admin-detail-bd" onClick={() => setSelectedCourse(null)} aria-hidden="true" />
+
+          <aside className="admin-detail" aria-label="Course details">
+            <div className="ad-head">
+              <div className="ad-head-info">
+                <h2 className="ad-name">{selectedCourse.title}</h2>
+                <div className="ad-head-meta">
+                  <span className={`astatus astatus--${selectedCourse.status}`}>{STATUS_LABEL[selectedCourse.status]}</span>
+                  <span className="at-muted">{selectedCourse.subject} · {selectedCourse.level}</span>
+                </div>
+              </div>
+              <button className="ad-close-btn" onClick={() => setSelectedCourse(null)} aria-label="Close panel">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <div className="ad-body">
+
+              {/* Basics */}
+              <div className="ad-section">
+                <h3 className="ad-section-title">Course details</h3>
+                <div className="ad-kv-grid">
+                  <div className="ad-kv">
+                    <span className="ad-k">Teacher</span>
+                    <span className="ad-v">
+                      {selectedCourse.teacher
+                        ? [selectedCourse.teacher.first_name, selectedCourse.teacher.last_name].filter(Boolean).join(' ')
+                        : '—'}
+                    </span>
+                  </div>
+                  <div className="ad-kv">
+                    <span className="ad-k">Exam board</span>
+                    <span className="ad-v">{selectedCourse.exam_board}</span>
+                  </div>
+                  <div className="ad-kv">
+                    <span className="ad-k">Rate</span>
+                    <span className="ad-v">{selectedCourse.currency} {Number(selectedCourse.rate_per_hour).toLocaleString()}/hr</span>
+                  </div>
+                  <div className="ad-kv">
+                    <span className="ad-k">Duration</span>
+                    <span className="ad-v">
+                      {selectedCourse.course_type === 'fixed' && selectedCourse.duration_months
+                        ? `${selectedCourse.duration_months} month${selectedCourse.duration_months !== 1 ? 's' : ''}`
+                        : 'Recurring'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Topics */}
+              {selectedCourse.topics?.length > 0 && (
+                <div className="ad-section">
+                  <h3 className="ad-section-title">Curriculum topics</h3>
+                  <div className="ad-topic-list">
+                    {selectedCourse.topics.map((t, i) => (
+                      <div key={i} className="ad-topic">
+                        <span className="ad-topic-n">{String(i + 1).padStart(2, '0')}</span>
+                        <div>
+                          <p className="ad-topic-head">{t.heading}</p>
+                          {t.plan && <p className="ad-topic-plan">{t.plan}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Methodology */}
+              {selectedCourse.teaching_bullets?.length > 0 && (
+                <div className="ad-section">
+                  <h3 className="ad-section-title">Teaching methodology</h3>
+                  <ul className="ad-bullet-list">
+                    {selectedCourse.teaching_bullets.map((b, i) => (
+                      <li key={i}>{b}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Lesson plan */}
+              {selectedCourse.lesson_plan_url && (
+                <div className="ad-section">
+                  <h3 className="ad-section-title">Lesson plan</h3>
+                  <a
+                    href={selectedCourse.lesson_plan_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ad-doc-link"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                    View lesson plan PDF ↗
+                  </a>
+                </div>
+              )}
+
+              {/* Previous rejection note */}
+              {selectedCourse.admin_note && (
+                <div className="ad-section">
+                  <h3 className="ad-section-title">Rejection note</h3>
+                  <p className="ad-bio">{selectedCourse.admin_note}</p>
+                </div>
+              )}
+
+            </div>
+
+            {/* Actions footer */}
+            <div className="ad-foot">
+              {courseActionErr && (
+                <p className="ad-action-err" role="alert">{courseActionErr}</p>
+              )}
+
+              {selectedCourse.status === 'pending' && (
+                confirmCourseReject ? (
+                  <div className="ad-confirm">
+                    <p className="ad-confirm-q">Reject this course?</p>
+                    <textarea
+                      className="ad-reject-note"
+                      placeholder="Reason for rejection (optional — shown to teacher)"
+                      value={rejectNoteInput}
+                      onChange={e => setRejectNoteInput(e.target.value)}
+                      rows={2}
+                    />
+                    <div className="ad-confirm-row">
+                      <button
+                        className="btn btn-outline"
+                        onClick={() => { setConfirmCourseReject(false); setRejectNoteInput('') }}
+                        disabled={courseActioning}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="btn ad-btn-reject-solid"
+                        onClick={handleRejectCourse}
+                        disabled={courseActioning}
+                      >
+                        {courseActioning ? 'Rejecting…' : 'Confirm rejection'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="ad-action-row">
+                    <button
+                      className="btn ad-btn-reject"
+                      onClick={() => setConfirmCourseReject(true)}
+                      disabled={courseActioning}
+                    >
+                      Reject
+                    </button>
+                    <button
+                      className="btn ad-btn-approve"
+                      onClick={handleApproveCourse}
+                      disabled={courseActioning}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                      {courseActioning ? 'Approving…' : 'Approve course'}
+                    </button>
+                  </div>
+                )
+              )}
+
+              {selectedCourse.status !== 'pending' && (
+                <div className={`ad-decided ad-decided--${selectedCourse.status}`}>
+                  {selectedCourse.status === 'approved'
+                    ? '✓ Approved — course is live on the platform.'
+                    : '✗ Rejected — teacher has been notified.'}
                 </div>
               )}
             </div>

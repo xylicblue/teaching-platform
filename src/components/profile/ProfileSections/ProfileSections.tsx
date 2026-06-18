@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import type { TutorProfile, Credential } from '../../../data/profileData'
 import './ProfileSections.css'
 
@@ -33,25 +34,47 @@ export function ProfileSubjects({ profile }: { profile: TutorProfile }) {
     <section className="block">
       <h2 className="display">Subjects taught</h2>
       <div className="subjects-grid">
-        {profile.subjects.map(s => (
-          <a key={s.code} className="subj-row" href="#book" aria-label={`${s.name}, Rs ${s.price.toLocaleString()} per hour`}>
-            <span className="si mono">{s.code}</span>
-            <div className="sr-main">
-              <div className="sr-name display">{s.name}</div>
-              <div className="sr-meta">
-                <span className="rating" style={{ fontSize: 12 }}>
-                  <span className="star">★</span>{s.rating.toFixed(1)}
-                </span>
-                <span>·</span>
-                <span>{s.students.toLocaleString()} students</span>
+        {profile.subjects.map(s => {
+          const inner = (
+            <>
+              <span className="si mono">{s.code}</span>
+              <div className="sr-main">
+                <div className="sr-name display">{s.name}</div>
+                {s.rating > 0 && (
+                  <div className="sr-meta">
+                    <span className="rating" style={{ fontSize: 12 }}>
+                      <span className="star">★</span>{s.rating.toFixed(1)}
+                    </span>
+                    {s.students > 0 && (
+                      <>
+                        <span>·</span>
+                        <span>{s.students.toLocaleString()} students</span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="sr-price">
-              <b className="mono">Rs {s.price.toLocaleString()}</b>
-              <span>/hr</span>
-            </div>
-          </a>
-        ))}
+              <div className="sr-price">
+                <b className="mono">Rs {s.price.toLocaleString()}</b>
+                <span>/hr</span>
+              </div>
+            </>
+          )
+          return s.id ? (
+            <Link
+              key={s.id}
+              to={`/courses/${s.id}`}
+              className="subj-row"
+              aria-label={`${s.name} — view course details`}
+            >
+              {inner}
+            </Link>
+          ) : (
+            <a key={s.code} className="subj-row" href="#book" aria-label={`${s.name}, Rs ${s.price.toLocaleString()} per hour`}>
+              {inner}
+            </a>
+          )
+        })}
       </div>
     </section>
   )
