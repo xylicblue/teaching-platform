@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AVATAR_COLORS } from '../../../data/profileData'
+import { AVATAR_COLORS } from '../../../lib/catalog'
 import type { TutorProfile } from '../../../data/profileData'
 import './SimilarTutors.css'
 

@@ -11,7 +11,7 @@
 .block-divider { height: 1px; background: var(--line); border: 0; margin: 0; }
 
 /* ── About ── */
-.about-text { font-size: 15.5px; line-height: 1.62; color: var(--ink); }
+.about-text { font-size: 15.5px; line-height: 1.62; color: var(--ink); max-width: 68ch; }
 .about-text p + p { margin-top: var(--s4); }
 
 .readmore {

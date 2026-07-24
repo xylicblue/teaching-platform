@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import './Navbar.css'
@@ -20,7 +20,9 @@ export default function Navbar() {
   const [dropOpen,   setDropOpen]   = useState(false)
   const [appStatus,  setAppStatus]  = useState<string | null>(null)
   const [userRole,   setUserRole]   = useState<string | null>(null)
-  const dropRef = useRef<HTMLDivElement>(null)
+  const [query,      setQuery]      = useState('')
+  const dropRef  = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   // Scroll listener
   useEffect(() => {
@@ -114,21 +116,35 @@ export default function Navbar() {
     <>
       <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
         <div className="navbar__inner">
-          <a href="/" className="navbar__wordmark" aria-label="Ustaad — home">Ustaad</a>
+          <Link to="/" className="navbar__wordmark" aria-label="Ustaad — home">Ustaad</Link>
 
-          <div className="navbar__search" role="search">
+          <form
+            className="navbar__search"
+            role="search"
+            onSubmit={e => {
+              e.preventDefault()
+              const q = query.trim()
+              navigate(q ? `/tutors?subject=${encodeURIComponent(q)}` : '/tutors')
+            }}
+          >
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.4" />
               <path d="M11.5 11.5L14 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
-            <input type="search" placeholder="Search by subject, tutor, or exam board…" aria-label="Search tutors" />
-          </div>
+            <input
+              type="search"
+              placeholder="Search by subject, tutor, or exam board…"
+              aria-label="Search tutors"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+          </form>
 
           <nav className="navbar__nav" aria-label="Main navigation">
-            <a href="#subjects"     className="navbar__nav-link">Browse</a>
-            <a href="#how-it-works" className="navbar__nav-link">How it works</a>
-            <a href="#parents"      className="navbar__nav-link">For Parents</a>
-            <a href="#teachers"     className="navbar__nav-link">Teach with us</a>
+            <Link to="/tutors"          className="navbar__nav-link">Browse</Link>
+            <Link to="/#how-it-works"   className="navbar__nav-link">How it works</Link>
+            <Link to="/#parents"        className="navbar__nav-link">For parents</Link>
+            <Link to="/apply"           className="navbar__nav-link">Teach with us</Link>
           </nav>
 
           <div className="navbar__actions">
@@ -200,8 +216,8 @@ export default function Navbar() {
             ) : (
               /* ── Logged-out actions ── */
               <>
-                <a href="/signin" className="navbar__signin">Sign in</a>
-                <a href="/tutors" className="navbar__cta">Find a tutor</a>
+                <Link to="/signin" className="navbar__signin">Sign in</Link>
+                <Link to="/tutors" className="navbar__cta">Find a tutor</Link>
               </>
             )}
           </div>
@@ -225,7 +241,7 @@ export default function Navbar() {
         aria-hidden={!menuOpen}
       >
         <div className="navbar__mobile-header">
-          <a href="/" className="navbar__wordmark navbar__wordmark--dark">Ustaad</a>
+          <Link to="/" className="navbar__wordmark navbar__wordmark--dark" onClick={() => setMenuOpen(false)}>Ustaad</Link>
           <button className="navbar__mobile-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -234,8 +250,13 @@ export default function Navbar() {
         </div>
 
         <nav className="navbar__mobile-nav">
-          {[['Browse','#subjects'],['How it works','#how-it-works'],['For Parents','#parents'],['Teach with us','#teachers']].map(([label, href]) => (
-            <a key={label} href={href} className="navbar__mobile-link" onClick={() => setMenuOpen(false)}>{label}</a>
+          {[
+            ['Browse',        '/tutors'],
+            ['How it works',  '/#how-it-works'],
+            ['For parents',   '/#parents'],
+            ['Teach with us', '/apply'],
+          ].map(([label, to]) => (
+            <Link key={label} to={to} className="navbar__mobile-link" onClick={() => setMenuOpen(false)}>{label}</Link>
           ))}
         </nav>
 
@@ -273,8 +294,8 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <a href="/signin" className="navbar__mobile-signin">Sign in</a>
-              <a href="/tutors" className="navbar__cta navbar__cta--large">Find a tutor</a>
+              <Link to="/signin" className="navbar__mobile-signin" onClick={() => setMenuOpen(false)}>Sign in</Link>
+              <Link to="/tutors" className="navbar__cta navbar__cta--large" onClick={() => setMenuOpen(false)}>Find a tutor</Link>
             </>
           )}
         </div>

@@ -5,18 +5,12 @@ import SignUpForm    from '../../components/auth/SignUpForm/SignUpForm'
 import RoleSelection from '../../components/auth/RoleSelection/RoleSelection'
 import SuccessScreen from '../../components/auth/SuccessScreen/SuccessScreen'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
+import { useCatalog } from '../../hooks/useCatalog'
+import { AVATAR_COLORS, catalogStats } from '../../lib/catalog'
 import './AuthPage.css'
 
 type View = 'signin' | 'signup' | 'role'
 type SuccessState = { name: string; role?: string; isSignIn: boolean }
-
-const AVATARS = [
-  { initials: 'AK', bg: '#1F4A3D' },
-  { initials: 'HR', bg: '#2E5A4A' },
-  { initials: 'FS', bg: '#A8741C' },
-  { initials: 'NM', bg: '#3B6E54' },
-  { initials: 'ZB', bg: '#5C544A' },
-]
 
 export default function AuthPage() {
   const navigate = useNavigate()
@@ -24,6 +18,9 @@ export default function AuthPage() {
   const redirectAfterAuth = searchParams.get('redirect') ?? undefined
   const [view,    setView]    = useState<View>('signin')
   const [success, setSuccess] = useState<SuccessState | null>(null)
+
+  const { teachers, courses } = useCatalog()
+  const stats = catalogStats({ teachers, courses })
 
   // Redirect already-authenticated users
   useEffect(() => {
@@ -54,7 +51,7 @@ export default function AuthPage() {
               </div>
 
               <div className="ae-content">
-                <span className="ae-eyebrow">Trusted by thousands of families</span>
+                <span className="ae-eyebrow">O &amp; A Level tutoring</span>
                 <h2 className="ae-headline display">
                   The right teacher<br />changes <em>everything.</em>
                 </h2>
@@ -64,28 +61,34 @@ export default function AuthPage() {
                 <div className="ae-rule" aria-hidden="true" />
                 <div className="ae-stats">
                   <div className="ae-stat">
-                    <b><span className="star">★</span> 4.9</b>
-                    <span>average rating</span>
+                    <b>{stats.tutors}</b>
+                    <span>verified {stats.tutors === 1 ? 'tutor' : 'tutors'}</span>
                   </div>
                   <div className="ae-stat">
-                    <b>600+</b>
-                    <span>verified tutors</span>
+                    <b>{stats.courses}</b>
+                    <span>{stats.courses === 1 ? 'course' : 'courses'}</span>
                   </div>
                   <div className="ae-stat">
-                    <b>12,000+</b>
-                    <span>lessons</span>
+                    <b>Free</b>
+                    <span>first demo class</span>
                   </div>
                 </div>
               </div>
 
-              <div className="ae-foot">
-                <div className="ae-av-row" aria-hidden="true">
-                  {AVATARS.map(a => (
-                    <span key={a.initials} className="ae-av" style={{ background: a.bg }}>{a.initials}</span>
-                  ))}
+              {teachers.length > 0 && (
+                <div className="ae-foot">
+                  <div className="ae-av-row" aria-hidden="true">
+                    {teachers.slice(0, 5).map(t => (
+                      t.avatarUrl
+                        ? <img key={t.id} className="ae-av" src={t.avatarUrl} alt="" style={{ objectFit: 'cover' }} />
+                        : <span key={t.id} className="ae-av" style={{ background: AVATAR_COLORS[t.colorIndex] }}>{t.initials}</span>
+                    ))}
+                  </div>
+                  <span className="ae-av-label">
+                    <b>{stats.tutors} verified {stats.tutors === 1 ? 'tutor' : 'tutors'}</b> teaching right now
+                  </span>
                 </div>
-                <span className="ae-av-label"><b>214 tutors</b> online right now</span>
-              </div>
+              )}
             </aside>
           )}
 

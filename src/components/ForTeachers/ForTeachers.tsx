@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import './ForTeachers.css'
 
 export default function ForTeachers() {
@@ -19,15 +20,15 @@ export default function ForTeachers() {
         </div>
 
         <div className="for-teachers__right">
-          <a href="/apply" className="for-teachers__cta">
+          <Link to="/apply" className="for-teachers__cta">
             Apply to teach
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </a>
-          <a href="/tutors/standards" className="for-teachers__secondary-link">
-            What we look for in a tutor →
-          </a>
+          </Link>
+          <Link to="/tutors" className="for-teachers__secondary-link">
+            See the tutors already teaching here →
+          </Link>
         </div>
       </div>
     </section>

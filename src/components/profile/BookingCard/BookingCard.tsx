@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { TutorProfile } from '../../../data/profileData'
 import './BookingCard.css'
 
@@ -29,6 +30,9 @@ export default function BookingCard({ profile }: Props) {
     ? `Book free demo — ${dayLabel(selDay)} ${selTime}`
     : 'Book free demo'
 
+  /* subjects[] are the teacher's live courses; the first is the default booking. */
+  const bookableCourseId = profile.subjects.find(s => s.id)?.id ?? null
+
   return (
     <div className="bookcard" id="book">
       {/* Price + demo banner */}
@@ -36,7 +40,7 @@ export default function BookingCard({ profile }: Props) {
         <div className="bc-price">
           <b className="display">Rs {profile.price.toLocaleString()}</b>
           <span className="per">/ hour</span>
-          <span className="from">A-Level · 9702</span>
+          {profile.subjects[0] && <span className="from">{profile.subjects[0].code}</span>}
         </div>
         <div className="bc-demo">
           <span className="pin" aria-hidden="true">
@@ -108,15 +112,15 @@ export default function BookingCard({ profile }: Props) {
 
       {/* Footer CTAs */}
       <div className="bookcard-foot">
-        <a className="btn btn-primary btn-block btn-lg" href="/demo">
-          {confirmLabel}
-        </a>
-        <a className="btn btn-outline btn-block" href="/message">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          Message {profile.name.split(' ')[0]}
-        </a>
+        {bookableCourseId ? (
+          <Link className="btn btn-primary btn-block btn-lg" to={`/courses/${bookableCourseId}/demo`}>
+            {confirmLabel}
+          </Link>
+        ) : (
+          <span className="btn btn-primary btn-block btn-lg" aria-disabled="true" style={{ opacity: .5 }}>
+            No courses open yet
+          </span>
+        )}
         <div className="bc-trustnote">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -139,13 +143,15 @@ export default function BookingCard({ profile }: Props) {
         </div>
       </div>
 
-      {/* Social proof nudge */}
-      <div className="watching">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
-        </svg>
-        {profile.watching}
-      </div>
+      {/* Social proof nudge — only when we have something real to say */}
+      {profile.watching && (
+        <div className="watching">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
+          </svg>
+          {profile.watching}
+        </div>
+      )}
     </div>
   )
 }

@@ -8,6 +8,9 @@ import DashboardPage     from './pages/DashboardPage/DashboardPage'
 import TeacherApplyPage  from './pages/TeacherApplyPage/TeacherApplyPage'
 import AdminDashboard    from './pages/AdminDashboard/AdminDashboard'
 import CoursePage        from './pages/CoursePage/CoursePage'
+import DemoRequestPage   from './pages/DemoRequest/DemoRequestPage'
+import EnrollPage        from './pages/Enroll/EnrollPage'
+import NotFoundPage      from './pages/NotFound/NotFoundPage'
 
 export default function App() {
   return (
@@ -21,7 +24,12 @@ export default function App() {
         <Route path="/dashboard"     element={<DashboardPage />} />
         <Route path="/apply"         element={<TeacherApplyPage />} />
         <Route path="/admin"         element={<AdminDashboard />} />
-        <Route path="/courses/:id"   element={<CoursePage />} />
+        <Route path="/courses/:id"      element={<CoursePage />} />
+        <Route path="/courses/:id/demo"   element={<DemoRequestPage />} />
+        <Route path="/courses/:id/enroll" element={<EnrollPage />} />
+
+        {/* Anything unmatched renders a real 404, never a blank white page. */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   )

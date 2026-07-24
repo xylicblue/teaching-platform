@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { AVATAR_COLORS } from '../../../data/profileData'
+import { Link } from 'react-router-dom'
+import { AVATAR_COLORS } from '../../../lib/catalog'
 import type { TutorProfile, ReviewItem } from '../../../data/profileData'
 import './ProfileReviews.css'
 
@@ -118,7 +119,7 @@ export default function ProfileReviews({ profile }: Props) {
       </div>
 
       <div className="reviews-more">
-        <a className="btn btn-outline" href="/reviews">Read all {profile.reviews} reviews</a>
+        <Link className="btn btn-outline" to="/tutors">Browse more tutors</Link>
       </div>
     </section>
   )

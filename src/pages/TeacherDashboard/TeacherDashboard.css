@@ -1247,3 +1247,41 @@
 }
 
 .tpe-locked-note svg { flex: none; margin-top: 2px; }
+
+/* ── Demo completion ────────────────────────────────────────────────────────── */
+.td-dc-complete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--evergreen-t);
+  border: 1px solid #cfe0d6;
+  border-radius: var(--r-btn);
+}
+
+.td-dc-complete-copy b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.td-dc-complete-copy span {
+  display: block;
+  font-size: 12.5px;
+  color: var(--slate);
+  margin-top: 2px;
+}
+
+.td-dc-donenote {
+  margin-top: 12px;
+  padding: 10px 13px;
+  background: var(--paper-2);
+  border-left: 3px solid var(--success);
+  border-radius: 0 var(--r-btn) var(--r-btn) 0;
+  font-size: 12.5px;
+  color: var(--slate);
+}

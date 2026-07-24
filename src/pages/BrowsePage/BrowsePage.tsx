@@ -1,136 +1,150 @@
-import { useState, useMemo, useEffect, useRef, Fragment } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import Navbar        from '../../components/Navbar/Navbar'
-import Footer        from '../../components/Footer/Footer'
-import FilterGroups  from '../../components/browse/FilterGroups/FilterGroups'
-import TutorRow      from '../../components/browse/TutorRow/TutorRow'
-import StoryStrip    from '../../components/browse/StoryStrip/StoryStrip'
-import {
-  BROWSE_TUTORS,
-  BROWSE_STORIES,
-  TYPE_LABEL,
-} from '../../data/browseData'
+import Navbar       from '../../components/Navbar/Navbar'
+import Footer       from '../../components/Footer/Footer'
+import FilterGroups from '../../components/browse/FilterGroups/FilterGroups'
+import TutorRow     from '../../components/browse/TutorRow/TutorRow'
+import { useCatalog } from '../../hooks/useCatalog'
+import { catalogStats, sortLevels, streamOf, fmtPrice } from '../../lib/catalog'
+import type { CatalogCourse, CatalogTeacher } from '../../lib/catalog'
 import './BrowsePage.css'
 
 export type BrowseFilters = {
   level:      string | null
   subject:    string | null
   board:      string | null
-  type:       string | null
-  rating:     number
+  stream:     string | null
+  day:        string | null
+  courseType: string | null
   maxPrice:   number
-  availToday: boolean
   sort:       string
 }
 
 const SORT_OPTIONS = [
-  { key: 'relevant', label: 'Most relevant'      },
-  { key: 'rated',    label: 'Highest rated'       },
-  { key: 'reviews',  label: 'Most reviews'        },
-  { key: 'low',      label: 'Lowest price'        },
-  { key: 'high',     label: 'Highest price'       },
-  { key: 'week',     label: 'Available this week' },
+  { key: 'relevant', label: 'Most relevant' },
+  { key: 'newest',   label: 'Newest'        },
+  { key: 'low',      label: 'Lowest price'  },
+  { key: 'high',     label: 'Highest price' },
+  { key: 'courses',  label: 'Most courses'  },
 ]
 
-function useCounter(target: number, dec = false, suffix = '') {
-  const [value, setValue] = useState('')
-  const ref = useRef<HTMLSpanElement>(null)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const io = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return
-      io.disconnect()
-      const start = performance.now(), dur = 1100
-      const step = (now: number) => {
-        const p = Math.min(1, (now - start) / dur)
-        const ease = 1 - Math.pow(1 - p, 3)
-        const v = target * ease
-        setValue((dec ? v.toFixed(1) : Math.floor(v).toLocaleString()) + suffix)
-        if (p < 1) requestAnimationFrame(step)
-        else setValue((dec ? target.toFixed(1) : target.toLocaleString()) + suffix)
-      }
-      requestAnimationFrame(step)
-    }, { threshold: 0.5 })
-    io.observe(el)
-    return () => io.disconnect()
-  }, [target, dec, suffix])
-  return { ref, value: value || (dec ? target.toFixed(1) : target.toLocaleString()) + suffix }
+const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+
+const PRICE_ANY = Number.MAX_SAFE_INTEGER
+
+/** Does this course satisfy every course-level filter? */
+function courseMatches(c: CatalogCourse, f: BrowseFilters): boolean {
+  if (f.level      && c.level      !== f.level)              return false
+  if (f.subject    && c.subject    !== f.subject)            return false
+  if (f.board      && c.exam_board !== f.board)              return false
+  if (f.stream     && streamOf(c.subject) !== f.stream)      return false
+  if (f.courseType && c.course_type !== f.courseType)        return false
+  if (f.day        && !(c.days_of_week ?? []).includes(f.day)) return false
+  if (c.rate_per_hour > f.maxPrice)                          return false
+  return true
 }
 
 export default function BrowsePage() {
   const [searchParams] = useSearchParams()
+  const { teachers, courses, loading } = useCatalog()
   const [sheetOpen, setSheetOpen] = useState(false)
 
   const [filters, setFilters] = useState<BrowseFilters>({
     level:      searchParams.get('level'),
     subject:    searchParams.get('subject'),
     board:      searchParams.get('board'),
-    type:       null,
-    rating:     0,
-    maxPrice:   5000,
-    availToday: false,
+    stream:     searchParams.get('stream'),
+    day:        null,
+    courseType: null,
+    maxPrice:   PRICE_ANY,
     sort:       'relevant',
   })
 
-  const setFilter = (key: keyof BrowseFilters, value: unknown) => {
+  const stats = useMemo(() => catalogStats({ teachers, courses }), [teachers, courses])
+
+  /* Every filter option below is derived from live courses. */
+  const options = useMemo(() => {
+    const priceMax = courses.length
+      ? Math.ceil(Math.max(...courses.map(c => c.rate_per_hour)) / 500) * 500
+      : 5000
+    return {
+      levels:   sortLevels(Array.from(new Set(courses.map(c => c.level)))),
+      subjects: Array.from(new Set(courses.map(c => c.subject))).sort(),
+      boards:   Array.from(new Set(courses.map(c => c.exam_board))).filter(b => b !== 'N/A').sort(),
+      days:     DAY_ORDER.filter(d => courses.some(c => (c.days_of_week ?? []).includes(d))),
+      priceMax,
+      currency: courses[0]?.currency ?? 'PKR',
+    }
+  }, [courses])
+
+  /* Once the catalog loads, snap an "Any price" slider to the real ceiling. */
+  useEffect(() => {
+    if (courses.length === 0) return
+    setFilters(f => (f.maxPrice === PRICE_ANY ? { ...f, maxPrice: options.priceMax } : f))
+  }, [courses.length, options.priceMax])
+
+  const setFilter = (key: keyof BrowseFilters, value: unknown) =>
     setFilters(f => ({ ...f, [key]: value }))
-  }
 
   const clearOne = (key: string) => {
-    if (key === 'rating')    setFilters(f => ({ ...f, rating: 0 }))
-    else if (key === 'maxPrice')   setFilters(f => ({ ...f, maxPrice: 5000 }))
-    else if (key === 'availToday') setFilters(f => ({ ...f, availToday: false }))
+    if (key === 'maxPrice') setFilters(f => ({ ...f, maxPrice: options.priceMax }))
     else setFilters(f => ({ ...f, [key]: null }))
   }
 
   const clearAll = () => setFilters(f => ({
-    level: null, subject: null, board: null, type: null,
-    rating: 0, maxPrice: 5000, availToday: false, sort: f.sort,
+    level: null, subject: null, board: null, stream: null,
+    day: null, courseType: null, maxPrice: options.priceMax, sort: f.sort,
   }))
 
-  // Filter + sort
+  /* A tutor is in the results if at least one of their courses matches.
+     We carry the matching subset through so the card shows only what fits. */
   const matched = useMemo(() => {
-    return BROWSE_TUTORS.filter(t => {
-      if (filters.level      && !t.lvl.includes(filters.level))      return false
-      if (filters.subject    && !t.subj.includes(filters.subject))   return false
-      if (filters.board      && !t.boards.includes(filters.board))   return false
-      if (filters.type       && !t.type.includes(filters.type))      return false
-      if (filters.rating     && t.r < filters.rating)                 return false
-      if (t.price > filters.maxPrice)                                 return false
-      if (filters.availToday && t.avail !== 'today')                  return false
-      return true
-    })
-  }, [filters])
+    return teachers
+      .map(t => {
+        const hits = t.courses.filter(c => courseMatches(c, filters))
+        if (hits.length === 0) return null
+        return {
+          ...t,
+          courses:  hits,
+          minPrice: Math.min(...hits.map(c => c.rate_per_hour)),
+          boards:   Array.from(new Set(hits.map(c => c.exam_board))).filter(b => b !== 'N/A'),
+          subjects: Array.from(new Set(hits.map(c => c.subject))),
+        } as CatalogTeacher
+      })
+      .filter((t): t is CatalogTeacher => t !== null)
+  }, [teachers, filters])
 
   const sorted = useMemo(() => {
     const a = [...matched]
-    if (filters.sort === 'rated')   a.sort((x,y) => y.r - x.r || y.rev - x.rev)
-    else if (filters.sort === 'reviews') a.sort((x,y) => y.rev - x.rev)
-    else if (filters.sort === 'low')     a.sort((x,y) => x.price - y.price)
-    else if (filters.sort === 'high')    a.sort((x,y) => y.price - x.price)
-    else if (filters.sort === 'week')    a.sort((x,y) => (x.avail === 'today' ? 0 : 1) - (y.avail === 'today' ? 0 : 1))
-    else a.sort((x,y) => (y.feat ? 1 : 0) - (x.feat ? 1 : 0) || y.r - x.r)
+    if (filters.sort === 'low')          a.sort((x, y) => x.minPrice - y.minPrice)
+    else if (filters.sort === 'high')    a.sort((x, y) => y.minPrice - x.minPrice)
+    else if (filters.sort === 'courses') a.sort((x, y) => y.courses.length - x.courses.length)
+    else if (filters.sort === 'newest')  a.sort((x, y) =>
+      (y.courses[0]?.created_at ?? '').localeCompare(x.courses[0]?.created_at ?? ''))
+    else a.sort((x, y) =>
+      y.courses.length - x.courses.length || (y.yearsExp ?? 0) - (x.yearsExp ?? 0))
     return a
   }, [matched, filters.sort])
 
-  const showFeatured = filters.sort === 'relevant'
-  const featured = showFeatured ? sorted.filter(t => t.feat) : []
-  const rest = showFeatured ? sorted.filter(t => !t.feat) : sorted
+  /* Feature the most experienced tutors, but only once there are enough
+     results that "featured" means something. */
+  const showFeatured = filters.sort === 'relevant' && sorted.length >= 4
+  const featured = showFeatured ? sorted.slice(0, 2) : []
+  const rest     = showFeatured ? sorted.slice(2)    : sorted
 
-  // Active filter chips
   type Chip = [string, string]
   const chips: Chip[] = []
   if (filters.level)      chips.push(['level',      filters.level])
-  if (filters.subject)    chips.push(['subject',     filters.subject])
-  if (filters.board)      chips.push(['board',       filters.board])
-  if (filters.type)       chips.push(['type',        TYPE_LABEL[filters.type]])
-  if (filters.rating)     chips.push(['rating',      `${filters.rating.toFixed(1)}★ & up`])
-  if (filters.availToday) chips.push(['availToday',  'Available today'])
-  if (filters.maxPrice < 5000) chips.push(['maxPrice', `Under Rs ${filters.maxPrice.toLocaleString()}`])
+  if (filters.subject)    chips.push(['subject',    filters.subject])
+  if (filters.board)      chips.push(['board',      filters.board])
+  if (filters.stream)     chips.push(['stream',     filters.stream])
+  if (filters.day)        chips.push(['day',        `${filters.day} classes`])
+  if (filters.courseType) chips.push(['courseType', filters.courseType === 'fixed' ? 'Fixed-length' : 'Ongoing weekly'])
+  if (filters.maxPrice < options.priceMax) {
+    chips.push(['maxPrice', `Under ${fmtPrice(filters.maxPrice, options.currency)}`])
+  }
 
-  // Dynamic headline
-  const hlSubject = filters.subject || (filters.level ? filters.level : null)
+  const hlSubject = filters.subject || filters.stream || filters.level || null
   const headline = filters.subject && filters.level
     ? `Find your <span class="hl">${filters.level} ${filters.subject}</span> tutor.`
     : filters.subject
@@ -139,17 +153,16 @@ export default function BrowsePage() {
         ? `Find your <span class="hl">${filters.level}</span> tutor.`
         : 'Find your <span class="hl">perfect</span> tutor.'
 
-  // Close sheet on backdrop click
   useEffect(() => {
-    if (sheetOpen) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
+    document.body.style.overflow = sheetOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [sheetOpen])
 
-  const c1 = useCounter(600,  false, '+')
-  const c2 = useCounter(4.9,  true,  '')
-  const c3 = useCounter(12000, false, '+')
-  const c4 = useCounter(85,   false, '%')
+  const filterProps = {
+    filters, onChange: setFilter, onClear: clearAll,
+    levels: options.levels, subjects: options.subjects, boards: options.boards,
+    days: options.days, priceMax: options.priceMax, currency: options.currency,
+  }
 
   return (
     <div className="browse-page">
@@ -166,73 +179,73 @@ export default function BrowsePage() {
             </span>
           </div>
 
-          <h1
-            className="sh-title display"
-            dangerouslySetInnerHTML={{ __html: headline }}
-          />
+          <h1 className="sh-title display" dangerouslySetInnerHTML={{ __html: headline }} />
           <p className="sh-sub">
             Browse verified specialists who&rsquo;ve sat the exact paper you&rsquo;re preparing for.
-            Compare ratings, prices and availability — then start with a free demo.
+            Compare subjects, schedules and prices — then start with a free demo.
           </p>
 
-          {/* Search bar */}
+          {/* Search bar — selects, so you can only ask for what exists */}
           <div className="searchbar" role="search">
             <div className="sbf">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
               </svg>
-              <input
-                type="text"
-                defaultValue={filters.subject ?? ''}
-                placeholder="Physics, Chemistry, Maths…"
+              <select
+                value={filters.subject ?? ''}
                 aria-label="Subject"
-                onBlur={e => setFilter('subject', e.target.value || null)}
-              />
+                onChange={e => setFilter('subject', e.target.value || null)}
+              >
+                <option value="">Any subject</option>
+                {options.subjects.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
             </div>
             <div className="sbf">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M22 10 12 5 2 10l10 5 10-5Z" /><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5" />
               </svg>
-              <input
-                type="text"
-                defaultValue={filters.level ?? ''}
-                placeholder="A-Level, O-Level, IGCSE…"
+              <select
+                value={filters.level ?? ''}
                 aria-label="Level"
-                onBlur={e => setFilter('level', e.target.value || null)}
-              />
+                onChange={e => setFilter('level', e.target.value || null)}
+              >
+                <option value="">Any level</option>
+                {options.levels.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
             </div>
             <div className="sbf">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9h10M7 13h6" />
               </svg>
-              <input
-                type="text"
-                defaultValue={filters.board ?? ''}
-                placeholder="CAIE, Edexcel, AQA…"
+              <select
+                value={filters.board ?? ''}
                 aria-label="Exam board"
-                onBlur={e => setFilter('board', e.target.value || null)}
-              />
+                onChange={e => setFilter('board', e.target.value || null)}
+              >
+                <option value="">Any board</option>
+                {options.boards.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
             </div>
-            <button className="btn btn-primary btn-lg">Search</button>
+            <a href="#results" className="btn btn-primary btn-lg">Search</a>
           </div>
 
-          {/* Trust strip with animated counters */}
+          {/* Trust strip — live counts, no animation over invented numbers */}
           <div className="trust-strip">
             <div className="ts">
-              <b><span ref={c1.ref}>{c1.value}</span></b>
-              <span>verified tutors</span>
+              <b>{stats.tutors}</b>
+              <span>{stats.tutors === 1 ? 'verified tutor' : 'verified tutors'}</span>
             </div>
             <div className="ts">
-              <b><span className="star">★</span><span ref={c2.ref}>{c2.value}</span></b>
-              <span>average rating</span>
+              <b>{stats.courses}</b>
+              <span>{stats.courses === 1 ? 'course' : 'courses'} published</span>
             </div>
             <div className="ts">
-              <b><span ref={c3.ref}>{c3.value}</span></b>
-              <span>lessons delivered</span>
+              <b>{stats.subjects}</b>
+              <span>{stats.subjects === 1 ? 'subject' : 'subjects'} covered</span>
             </div>
             <div className="ts">
-              <b><span ref={c4.ref}>{c4.value}</span></b>
-              <span>continue after demo</span>
+              <b>Free</b>
+              <span>first demo class</span>
             </div>
           </div>
         </div>
@@ -258,7 +271,7 @@ export default function BrowsePage() {
         <div className="bcols">
           {/* ── Filter sidebar ── */}
           <aside className="fside" aria-label="Filters">
-            <FilterGroups filters={filters} onChange={setFilter} onClear={clearAll} />
+            <FilterGroups {...filterProps} />
             {chips.length > 0 && (
               <button className="fclear" onClick={clearAll}>Clear all filters</button>
             )}
@@ -266,7 +279,6 @@ export default function BrowsePage() {
 
           {/* ── Results column ── */}
           <div className="results-col">
-            {/* Active chips */}
             {chips.length > 0 && (
               <div className="chips">
                 {chips.map(([key, label]) => (
@@ -283,10 +295,10 @@ export default function BrowsePage() {
               </div>
             )}
 
-            {/* Sort bar */}
             <div className="sortbar">
               <div className="count">
-                <b className="display">{matched.length}</b> tutors found
+                <b className="display">{loading ? '—' : matched.length}</b>{' '}
+                {matched.length === 1 ? 'tutor' : 'tutors'} found
               </div>
               <div className="sort-tabs" role="group" aria-label="Sort by">
                 {SORT_OPTIONS.map(opt => (
@@ -302,8 +314,7 @@ export default function BrowsePage() {
               </div>
             </div>
 
-            {/* Featured row */}
-            {showFeatured && featured.length >= 2 && (
+            {showFeatured && (
               <div className="featured-wrap">
                 <div className="feat-head">
                   <span className="fl display">
@@ -312,43 +323,36 @@ export default function BrowsePage() {
                     </svg>
                     Featured tutors
                   </span>
-                  <span className="fb">Top rated</span>
-                  <span className="feat-note">Highest-rated tutors matching your search</span>
+                  <span className="feat-note">Most experienced tutors matching your search</span>
                 </div>
                 <div className="rlist">
-                  {featured.slice(0, 2).map(t => (
-                    <TutorRow key={t.id} tutor={t} featured />
-                  ))}
+                  {featured.map(t => <TutorRow key={t.id} tutor={t} featured />)}
                 </div>
               </div>
             )}
 
-            {/* Main list with story interstitials */}
             <div className="rlist">
-              {rest.length === 0 && !showFeatured ? (
+              {loading ? (
+                <div className="empty-state"><p>Loading tutors…</p></div>
+              ) : rest.length === 0 && featured.length === 0 ? (
                 <div className="empty-state">
-                  <p>No tutors match these filters.</p>
-                  <button className="fclear" onClick={clearAll} style={{ fontSize: 15 }}>
-                    Clear all filters
-                  </button>
+                  <p>
+                    {courses.length === 0
+                      ? 'No courses have been published yet.'
+                      : 'No tutors match these filters.'}
+                  </p>
+                  {courses.length === 0 ? (
+                    <Link className="btn btn-outline" to="/apply">Apply to teach</Link>
+                  ) : (
+                    <button className="fclear" onClick={clearAll} style={{ fontSize: 15 }}>
+                      Clear all filters
+                    </button>
+                  )}
                 </div>
               ) : (
-                rest.map((t, i) => (
-                  <Fragment key={t.id}>
-                    <TutorRow tutor={t} />
-                    {(i + 1) % 5 === 0 && BROWSE_STORIES[Math.floor(i / 5) % BROWSE_STORIES.length] && (
-                      <StoryStrip
-                        {...BROWSE_STORIES[Math.floor(i / 5) % BROWSE_STORIES.length]}
-                      />
-                    )}
-                  </Fragment>
-                ))
+                rest.map(t => <TutorRow key={t.id} tutor={t} />)
               )}
             </div>
-
-            {matched.length > 0 && (
-              <button className="btn btn-outline loadmore">Show more tutors</button>
-            )}
           </div>
         </div>
       </main>
@@ -358,7 +362,7 @@ export default function BrowsePage() {
       {/* Mobile sticky CTA */}
       <div className="mcta">
         <a className="btn btn-primary" href="#results" style={{ flex: 1 }}>
-          View {matched.length} tutors
+          View {matched.length} {matched.length === 1 ? 'tutor' : 'tutors'}
         </a>
       </div>
 
@@ -379,11 +383,10 @@ export default function BrowsePage() {
           </button>
         </div>
 
-        {/* Sort in sheet */}
         <div className="fgroup">
           <h4>Sort by</h4>
           <div className="fpills">
-            {SORT_OPTIONS.slice(0, 4).map(opt => (
+            {SORT_OPTIONS.map(opt => (
               <button
                 key={opt.key}
                 className="fpill"
@@ -398,12 +401,12 @@ export default function BrowsePage() {
         </div>
         <hr className="fdivider" />
 
-        <FilterGroups filters={filters} onChange={setFilter} onClear={clearAll} />
+        <FilterGroups {...filterProps} />
 
         <div className="sheet-foot">
           <button className="btn btn-outline" onClick={clearAll}>Clear all</button>
           <button className="btn btn-primary" onClick={() => setSheetOpen(false)}>
-            Show {matched.length} tutors
+            Show {matched.length} {matched.length === 1 ? 'tutor' : 'tutors'}
           </button>
         </div>
       </div>

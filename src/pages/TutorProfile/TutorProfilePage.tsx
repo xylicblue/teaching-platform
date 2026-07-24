@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { PROFILES, AVATAR_COLORS } from '../../data/profileData'
+import { AVATAR_COLORS } from '../../lib/catalog'
 import type { TutorProfile, AvailDay, Credential } from '../../data/profileData'
 import Navbar         from '../../components/Navbar/Navbar'
 import Breadcrumb     from '../../components/profile/Breadcrumb/Breadcrumb'
@@ -120,11 +120,13 @@ async function fetchTeacherProfile(teacherId: string): Promise<TutorProfile | nu
 
   if (!prof || !['teacher', 'admin'].includes(prof.role)) return null
 
-  // Teacher application
+  // Public-safe application fields (view from migration 009).
+  // teacher_applications itself is RLS-locked to self/admin, so reading it here
+  // would return nothing for a logged-out visitor.
   const { data: app } = await supabase
-    .from('teacher_applications')
-    .select('bio, years_exp, education, city, country, subjects_interest, teaching_levels, cnic_number')
-    .eq('user_id', teacherId)
+    .from('teacher_public')
+    .select('years_exp, education, city, country, subjects_interest, teaching_levels, id_verified')
+    .eq('id', teacherId)
     .maybeSingle()
 
   // Approved active courses
@@ -146,13 +148,12 @@ async function fetchTeacherProfile(teacherId: string): Promise<TutorProfile | nu
   const education    = (app?.education ?? []) as { degree: string; field: string; institution: string; year: string }[]
   const subjectsInt  = (app?.subjects_interest ?? []) as { name: string; exam_boards: string[] }[]
   const name         = [prof.first_name, prof.last_name].filter(Boolean).join(' ') || 'Teacher'
-  const yearsExp     = app?.years_exp ?? 1
-  // prefer profiles.bio (teacher-editable); fall back to application snapshot
-  const bio          = prof.bio || app?.bio || ''
+  const yearsExp     = app?.years_exp ?? 0
+  const bio          = prof.bio ?? ''
   const city         = app?.city ?? ''
-  const country      = app?.country ?? ''
+  const country      = app?.country === 'PK' ? 'Pakistan' : (app?.country ?? '')
   const location     = [city, country].filter(Boolean).join(', ') || 'Pakistan'
-  const hasCnic      = !!(app?.cnic_number)
+  const hasCnic      = !!app?.id_verified
 
   // availability: merge across all courses
   const availability = liveCourses.length > 0
@@ -228,20 +229,18 @@ export default function TutorProfilePage() {
   const { id } = useParams<{ id: string }>()
   const heroRef = useRef<HTMLDivElement>(null)
 
-  const isMock = !!(id && PROFILES[id])
-
-  const [profile,  setProfile]  = useState<TutorProfile | null>(isMock ? PROFILES[id!] : null)
-  const [loading,  setLoading]  = useState(!isMock)
+  const [profile,  setProfile]  = useState<TutorProfile | null>(null)
+  const [loading,  setLoading]  = useState(true)
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
-    if (isMock || !id) return
+    if (!id) { setNotFound(true); setLoading(false); return }
     fetchTeacherProfile(id).then(p => {
       if (p) setProfile(p)
       else setNotFound(true)
       setLoading(false)
     })
-  }, [id, isMock])
+  }, [id])
 
   /* ── Loading ── */
   if (loading) {
@@ -279,10 +278,9 @@ export default function TutorProfilePage() {
   }
 
   const subject = profile.headline.split('·')[0].trim().replace(' Specialist', '').replace(' Tutor', '')
-  const hasLiveData = !isMock
-  const hasReviews  = profile.reviewList.length > 0
-  const hasResults  = profile.results.length > 0
-  const hasSimilar  = profile.similar.length > 0
+  const hasReviews = profile.reviewList.length > 0
+  const hasResults = profile.results.length > 0
+  const hasSimilar = profile.similar.length > 0
 
   return (
     <div className="profile-page">
@@ -321,7 +319,7 @@ export default function TutorProfilePage() {
                 <ProfileReviews profile={profile} />
               </>
             )}
-            {!hasReviews && hasLiveData && (
+            {!hasReviews && (
               <>
                 <hr className="block-divider" />
                 <section className="block">

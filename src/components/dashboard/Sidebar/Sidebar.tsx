@@ -22,10 +22,6 @@ const MAIN_NAV: NavItem[] = [
     id: 'tutors', label: 'My Tutors', to: '/tutors',
     icon: <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>,
   },
-  {
-    id: 'messages', label: 'Messages', badge: '3',
-    icon: <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-  },
 ]
 
 const SOON_NAV: NavItem[] = [
@@ -44,12 +40,22 @@ const SOON_NAV: NavItem[] = [
 ]
 
 type Props = {
-  open:      boolean
-  active:    string
-  onNavigate: (id: string) => void
+  open:        boolean
+  active:      string
+  onNavigate:  (id: string) => void
+  userName?:   string | null
+  userRole?:   string | null
+  avatarUrl?:  string | null
+  unread?:     number
 }
 
-export default function Sidebar({ open, active, onNavigate }: Props) {
+export default function Sidebar({
+  open, active, onNavigate, userName, userRole, avatarUrl, unread = 0,
+}: Props) {
+  const name     = userName?.trim() || 'Your account'
+  const initials = name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'U'
+  const roleLbl  = userRole === 'parent' ? 'Parent' : 'Student'
+
   function renderItem(item: NavItem) {
     const cls = `nav-item${active === item.id ? ' active' : ''}`
     const inner = (
@@ -77,22 +83,28 @@ export default function Sidebar({ open, active, onNavigate }: Props) {
       </Link>
 
       <nav className="side-nav">
-        {MAIN_NAV.map(renderItem)}
+        {MAIN_NAV.map(item =>
+          renderItem(item.id === 'dashboard' && unread > 0
+            ? { ...item, badge: String(unread) }
+            : item)
+        )}
         <div className="side-sec">Coming soon</div>
         {SOON_NAV.map(renderItem)}
       </nav>
 
       <div className="side-foot">
         <div className="side-upgrade">
-          <b>Refer a friend</b>
-          <p>Give a friend a free demo, get Rs 1,000 off your next lesson.</p>
-          <a href="#">Share invite →</a>
+          <b>Every first class is free</b>
+          <p>Try any tutor with a free demo before you pay for a single lesson.</p>
+          <Link to="/tutors">Find a tutor →</Link>
         </div>
         <button className="user-chip">
-          <span className="av av-c0" aria-hidden="true">SK</span>
+          {avatarUrl
+            ? <img className="av av-c0" src={avatarUrl} alt="" style={{ objectFit: 'cover' }} />
+            : <span className="av av-c0" aria-hidden="true">{initials}</span>}
           <div>
-            <div className="uc-name">Sarah Khan</div>
-            <div className="uc-role">Student · A-Levels</div>
+            <div className="uc-name">{name}</div>
+            <div className="uc-role">{roleLbl}</div>
           </div>
           <span className="uc-caret">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>

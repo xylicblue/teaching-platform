@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AVATAR_COLORS } from '../../../data/profileData'
+import { AVATAR_COLORS } from '../../../lib/catalog'
 import type { TutorProfile } from '../../../data/profileData'
 import './StickyBar.css'
 

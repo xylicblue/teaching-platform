@@ -1,0 +1,52 @@
+.nf-page {
+  background: var(--paper);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.nf-wrap {
+  flex: 1;
+  padding-top: 160px;
+  padding-bottom: var(--s9);
+  max-width: 680px;
+}
+
+.nf-title {
+  font-size: clamp(32px, 4.5vw, 52px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  margin-top: var(--s2);
+}
+
+.nf-lede {
+  color: var(--slate);
+  font-size: 16px;
+  line-height: 1.65;
+  margin-top: var(--s4);
+}
+
+.nf-path {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  padding: 2px 7px;
+  word-break: break-all;
+}
+
+.nf-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: var(--s6);
+}
+
+@media (max-width: 640px) {
+  .nf-wrap { padding-top: 120px; }
+  .nf-actions .btn { flex: 1 1 100%; }
+}

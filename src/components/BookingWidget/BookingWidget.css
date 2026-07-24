@@ -107,6 +107,27 @@
   margin-top: 2px;
 }
 
+.bc-av--img { object-fit: cover; flex-shrink: 0; }
+
+.bc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.bc-chip {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5C544A;
+  border: 1px solid #E0D8C9;
+  background: #FAF7F2;
+  border-radius: 9999px;
+  padding: 2px 8px;
+}
+
+.bc-chip--price { color: #1F1B16; font-weight: 500; }
+
 .bc-label {
   font-family: "Inter", sans-serif;
   font-size: 12px;
@@ -117,10 +138,10 @@
   margin: 16px 0 10px;
 }
 
-/* Slots grid */
+/* Slots grid — column count follows however many class days the course has */
 .slots {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   gap: 8px;
 }
 

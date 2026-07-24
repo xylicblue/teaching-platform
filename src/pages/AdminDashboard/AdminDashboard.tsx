@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import './AdminDashboard.css'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
-type AdminView = 'overview' | 'applications' | 'users' | 'courses'
+type AdminView = 'overview' | 'applications' | 'users' | 'courses' | 'demos' | 'enrollments'
 type AppStatus = 'pending' | 'approved' | 'rejected'
 type AppFilter = 'all' | AppStatus
 
@@ -67,6 +67,33 @@ type CourseRow = {
   admin_note: string | null
   created_at: string
   teacher: { first_name: string | null; last_name: string | null } | null
+}
+
+type DemoRow = {
+  id: string
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled'
+  student_note: string | null
+  preferred_time: string | null
+  meet_link: string | null
+  scheduled_at: string | null
+  created_at: string
+  courses: { title: string; subject: string; level: string; exam_board: string } | null
+  teacher: { first_name: string | null; last_name: string | null } | null
+  student: { first_name: string | null; last_name: string | null } | null
+}
+
+type EnrollmentRow = {
+  id: string
+  course_id: string
+  status: 'pending_payment' | 'active' | 'paused' | 'cancelled' | 'completed'
+  first_month_total: number
+  currency: string
+  sessions_per_week: number
+  start_date: string | null
+  created_at: string
+  courses: { title: string; level: string } | null
+  teacher: { first_name: string | null; last_name: string | null } | null
+  student: { first_name: string | null; last_name: string | null } | null
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
@@ -162,6 +189,15 @@ export default function AdminDashboard({ onTeacherMode }: { onTeacherMode?: () =
   /* ── Courses ── */
   const [courses,        setCourses]        = useState<CourseRow[]>([])
   const [coursesLoading, setCoursesLoading] = useState(false)
+
+  /* demos */
+  const [demos,        setDemos]        = useState<DemoRow[]>([])
+  const [demosLoading, setDemosLoading] = useState(false)
+  const [demoFilter,   setDemoFilter]   = useState<'accepted' | 'pending' | 'all'>('accepted')
+
+  /* enrollments */
+  const [enrollments,   setEnrollments]   = useState<EnrollmentRow[]>([])
+  const [enrolLoading,  setEnrolLoading]  = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<CourseRow | null>(null)
   const [courseFilter,   setCourseFilter]   = useState<'pending' | 'all'>('pending')
   const [rejectNoteInput, setRejectNoteInput] = useState('')
@@ -183,6 +219,13 @@ export default function AdminDashboard({ onTeacherMode }: { onTeacherMode?: () =
   }
   const pendingCourses = courses.filter(c => c.status === 'pending')
   const filteredCourses = courseFilter === 'pending' ? pendingCourses : courses
+
+  const awaitingPayment = enrollments.filter(e => e.status === 'pending_payment')
+  const scheduledDemos = demos.filter(d => d.status === 'accepted')
+  const pendingDemos   = demos.filter(d => d.status === 'pending')
+  const filteredDemos  =
+    demoFilter === 'accepted' ? scheduledDemos :
+    demoFilter === 'pending'  ? pendingDemos   : demos
 
   /* ── Body class ─────────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -258,6 +301,47 @@ export default function AdminDashboard({ onTeacherMode }: { onTeacherMode?: () =
   useEffect(() => {
     if (!authChecking) fetchCourses()
   }, [authChecking, fetchCourses])
+
+  /* ── Fetch demo requests (admin RLS policy added in migration 010) ─────────── */
+  const fetchDemos = useCallback(async () => {
+    setDemosLoading(true)
+    const { data } = await supabase
+      .from('demo_requests')
+      .select(`
+        id, status, student_note, preferred_time, meet_link, scheduled_at, created_at,
+        courses ( title, subject, level, exam_board ),
+        teacher:profiles!teacher_id ( first_name, last_name ),
+        student:profiles!student_id ( first_name, last_name )
+      `)
+      .order('created_at', { ascending: false })
+    setDemos((data as unknown as DemoRow[]) ?? [])
+    setDemosLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (!authChecking) fetchDemos()
+  }, [authChecking, fetchDemos])
+
+  /* ── Fetch course registrations (admin RLS policy from migration 011) ──────── */
+  const fetchEnrollments = useCallback(async () => {
+    setEnrolLoading(true)
+    const { data } = await supabase
+      .from('enrollments')
+      .select(`
+        id, course_id, status, first_month_total, currency,
+        sessions_per_week, start_date, created_at,
+        courses ( title, level ),
+        teacher:profiles!teacher_id ( first_name, last_name ),
+        student:profiles!student_id ( first_name, last_name )
+      `)
+      .order('created_at', { ascending: false })
+    setEnrollments((data as unknown as EnrollmentRow[]) ?? [])
+    setEnrolLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (!authChecking) fetchEnrollments()
+  }, [authChecking, fetchEnrollments])
 
   /* ── Signed URLs for selected application documents ─────────────────────────── */
   useEffect(() => {
@@ -462,6 +546,34 @@ export default function AdminDashboard({ onTeacherMode }: { onTeacherMode?: () =
               <span className="admin-nav-badge">{pendingCourses.length}</span>
             )}
           </button>
+
+          {/* Demo classes */}
+          <button
+            className={`admin-nav-item${view === 'demos' ? ' active' : ''}`}
+            onClick={() => navTo('demos')}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>
+            </svg>
+            Demo classes
+            {scheduledDemos.length > 0 && (
+              <span className="admin-nav-badge admin-nav-badge--calm">{scheduledDemos.length}</span>
+            )}
+          </button>
+
+          {/* Registrations */}
+          <button
+            className={`admin-nav-item${view === 'enrollments' ? ' active' : ''}`}
+            onClick={() => navTo('enrollments')}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
+            </svg>
+            Registrations
+            {awaitingPayment.length > 0 && (
+              <span className="admin-nav-badge">{awaitingPayment.length}</span>
+            )}
+          </button>
         </nav>
 
         <div className="admin-side-foot">
@@ -498,7 +610,12 @@ export default function AdminDashboard({ onTeacherMode }: { onTeacherMode?: () =
             </svg>
           </button>
           <h1 className="admin-topbar-title">
-            {view === 'overview' ? 'Overview' : view === 'applications' ? 'Teacher applications' : view === 'courses' ? 'Course approvals' : 'Users'}
+            {view === 'overview'     ? 'Overview'
+             : view === 'applications' ? 'Teacher applications'
+             : view === 'courses'      ? 'Course approvals'
+             : view === 'demos'        ? 'Demo classes'
+             : view === 'enrollments'  ? 'Course registrations'
+             : 'Users'}
           </h1>
           <div className="admin-topbar-right">
             <span className="admin-topbar-name">{adminName}</span>
@@ -677,6 +794,168 @@ export default function AdminDashboard({ onTeacherMode }: { onTeacherMode?: () =
                 </table>
               </div>
             )
+          )}
+
+          {/* ── REGISTRATIONS ─────────────────────────────────────────────────── */}
+          {view === 'enrollments' && (
+            <>
+              <div className="admin-note-bar">
+                Payment is not switched on yet — every registration sits at
+                <b> Payment pending</b> until checkout ships.
+              </div>
+
+              {enrolLoading ? (
+                <p className="admin-empty">Loading registrations…</p>
+              ) : enrollments.length === 0 ? (
+                <p className="admin-empty">
+                  No course registrations yet. Students can register once a teacher marks
+                  their demo class complete.
+                </p>
+              ) : (
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Course</th>
+                        <th>Student</th>
+                        <th>Teacher</th>
+                        <th>Per week</th>
+                        <th>First month</th>
+                        <th>Starts</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {enrollments.map(e => (
+                        <tr key={e.id}>
+                          <td className="at-name">
+                            {e.courses?.title ?? 'Course removed'}
+                            {e.courses && <span className="at-more"> · {e.courses.level}</span>}
+                          </td>
+                          <td>{[e.student?.first_name, e.student?.last_name].filter(Boolean).join(' ') || '—'}</td>
+                          <td>{[e.teacher?.first_name, e.teacher?.last_name].filter(Boolean).join(' ') || '—'}</td>
+                          <td className="at-muted">
+                            {e.sessions_per_week} {e.sessions_per_week === 1 ? 'class' : 'classes'}
+                          </td>
+                          <td className="ad-amount">
+                            {e.currency === 'USD' ? '$' : 'Rs '}
+                            {Number(e.first_month_total).toLocaleString('en-PK')}
+                          </td>
+                          <td className="at-muted">
+                            {e.start_date ? fmtDate(e.start_date) : '—'}
+                          </td>
+                          <td>
+                            <span className={`astatus astatus--${
+                              e.status === 'active' ? 'approved'
+                              : e.status === 'cancelled' ? 'rejected'
+                              : 'pending'
+                            }`}>
+                              {e.status === 'pending_payment' ? 'Payment pending'
+                                : e.status.charAt(0).toUpperCase() + e.status.slice(1)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── DEMO CLASSES ──────────────────────────────────────────────────── */}
+          {view === 'demos' && (
+            <>
+              <div className="admin-filter-row">
+                <button
+                  className={`afilter${demoFilter === 'accepted' ? ' active' : ''}`}
+                  onClick={() => setDemoFilter('accepted')}
+                >
+                  Scheduled
+                  <span className="afilter-n afilter-n--approved">{scheduledDemos.length}</span>
+                </button>
+                <button
+                  className={`afilter${demoFilter === 'pending' ? ' active' : ''}`}
+                  onClick={() => setDemoFilter('pending')}
+                >
+                  Awaiting teacher
+                  <span className="afilter-n afilter-n--pending">{pendingDemos.length}</span>
+                </button>
+                <button
+                  className={`afilter${demoFilter === 'all' ? ' active' : ''}`}
+                  onClick={() => setDemoFilter('all')}
+                >
+                  All
+                  <span className="afilter-n afilter-n--total">{demos.length}</span>
+                </button>
+              </div>
+
+              {demosLoading ? (
+                <p className="admin-empty">Loading demo classes…</p>
+              ) : filteredDemos.length === 0 ? (
+                <p className="admin-empty">
+                  {demoFilter === 'accepted'
+                    ? 'No demo classes have been confirmed yet.'
+                    : demoFilter === 'pending'
+                      ? 'No demo requests are waiting on a teacher.'
+                      : 'No demo requests yet.'}
+                </p>
+              ) : (
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Course</th>
+                        <th>Teacher</th>
+                        <th>Student</th>
+                        <th>Time</th>
+                        <th>Requested</th>
+                        <th>Status</th>
+                        <th>Link</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredDemos.map(d => (
+                        <tr key={d.id}>
+                          <td className="at-name">
+                            {d.courses?.title ?? 'Course removed'}
+                            {d.courses && (
+                              <span className="at-more"> · {d.courses.level}</span>
+                            )}
+                          </td>
+                          <td>{[d.teacher?.first_name, d.teacher?.last_name].filter(Boolean).join(' ') || '—'}</td>
+                          <td>{[d.student?.first_name, d.student?.last_name].filter(Boolean).join(' ') || '—'}</td>
+                          <td className="at-muted">
+                            {d.scheduled_at
+                              ? new Date(d.scheduled_at).toLocaleString('en-GB', {
+                                  day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+                                })
+                              : d.preferred_time || 'To be confirmed'}
+                          </td>
+                          <td className="at-muted">{fmtDate(d.created_at)}</td>
+                          <td>
+                            <span className={`astatus astatus--${d.status === 'accepted' ? 'approved' : d.status === 'declined' ? 'rejected' : 'pending'}`}>
+                              {d.status === 'accepted' ? 'Scheduled'
+                                : d.status === 'pending' ? 'Awaiting teacher'
+                                : d.status.charAt(0).toUpperCase() + d.status.slice(1)}
+                            </span>
+                          </td>
+                          <td>
+                            {d.meet_link ? (
+                              <a href={d.meet_link} target="_blank" rel="noopener noreferrer" className="ad-meetlink">
+                                Join
+                              </a>
+                            ) : (
+                              <span className="at-muted">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
 
           {/* ── COURSES ───────────────────────────────────────────────────────── */}

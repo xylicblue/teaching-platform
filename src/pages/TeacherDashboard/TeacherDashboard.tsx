@@ -6,7 +6,7 @@ import './TeacherDashboard.css'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 type View       = 'overview' | 'courses' | 'demos' | 'profile'
-type DemoFilter = 'pending' | 'accepted' | 'all'
+type DemoFilter = 'pending' | 'accepted' | 'completed' | 'all'
 type DemoStatus = 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled'
 
 interface Course {
@@ -216,6 +216,19 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
     loadDemos()
   }
 
+  /* Marking the demo complete is what unlocks course registration for the
+     student — the trigger in migration 011 notifies them. */
+  async function handleCompleteDemo(id: string) {
+    setActionLoading(id); setActionError('')
+    const { error } = await supabase
+      .from('demo_requests')
+      .update({ status: 'completed' })
+      .eq('id', id)
+    setActionLoading(null)
+    if (error) { setActionError('Could not mark this demo complete. Please try again.'); return }
+    loadDemos()
+  }
+
   /* ── load profile edit data ── */
   useEffect(() => {
     if (!userId) return
@@ -401,6 +414,7 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
                 setMeetLink={setMeetLink}
                 onAccept={handleAcceptDemo}
                 onDecline={handleDeclineDemo}
+                onComplete={handleCompleteDemo}
                 actionLoading={actionLoading}
                 actionError={actionError}
               />
@@ -648,7 +662,7 @@ function CoursesView({
 function DemosView({
   demos, allDemos, loading, filter, onFilter,
   acceptingId, setAcceptingId, meetLink, setMeetLink,
-  onAccept, onDecline, actionLoading, actionError,
+  onAccept, onDecline, onComplete, actionLoading, actionError,
 }: {
   demos: DemoRequest[]
   allDemos: DemoRequest[]
@@ -661,13 +675,15 @@ function DemosView({
   setMeetLink: (s: string) => void
   onAccept: (id: string) => void
   onDecline: (id: string) => void
+  onComplete: (id: string) => void
   actionLoading: string | null
   actionError: string
 }) {
   const counts = {
-    pending:  allDemos.filter(d => d.status === 'pending').length,
-    accepted: allDemos.filter(d => d.status === 'accepted').length,
-    all:      allDemos.length,
+    pending:   allDemos.filter(d => d.status === 'pending').length,
+    accepted:  allDemos.filter(d => d.status === 'accepted').length,
+    completed: allDemos.filter(d => d.status === 'completed').length,
+    all:       allDemos.length,
   }
 
   return (
@@ -681,7 +697,7 @@ function DemosView({
 
       {/* Filter tabs */}
       <div className="td-filters">
-        {(['pending','accepted','all'] as DemoFilter[]).map(f => (
+        {(['pending','accepted','completed','all'] as DemoFilter[]).map(f => (
           <button
             key={f}
             className={`td-filter${filter === f ? ' active' : ''}`}
@@ -715,6 +731,7 @@ function DemosView({
               setMeetLink={setMeetLink}
               onAccept={onAccept}
               onDecline={onDecline}
+              onComplete={onComplete}
               actionLoading={actionLoading === d.id}
               actionError={acceptingId === d.id ? actionError : ''}
             />
@@ -817,6 +834,7 @@ function DemoCard({
   setMeetLink,
   onAccept,
   onDecline,
+  onComplete,
   actionLoading = false,
   actionError = '',
 }: {
@@ -829,6 +847,7 @@ function DemoCard({
   setMeetLink?: (s: string) => void
   onAccept?: (id: string) => void
   onDecline?: (id: string) => void
+  onComplete?: (id: string) => void
   actionLoading?: boolean
   actionError?: string
 }) {
@@ -911,6 +930,30 @@ function DemoCard({
             </button>
           </div>
         </div>
+      )}
+
+      {/* ── Accepted: the class has happened, close it out */}
+      {demo.status === 'accepted' && !compact && onComplete && (
+        <div className="td-dc-complete">
+          <div className="td-dc-complete-copy">
+            <b>Has this demo taken place?</b>
+            <span>Marking it complete lets {s?.first_name ?? 'the student'} register for the course.</span>
+          </div>
+          <button
+            className={`btn btn-primary btn-sm${actionLoading ? ' loading' : ''}`}
+            onClick={() => onComplete(demo.id)}
+            disabled={actionLoading}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {actionLoading ? 'Saving…' : 'Mark completed'}
+          </button>
+        </div>
+      )}
+
+      {demo.status === 'completed' && !compact && (
+        <p className="td-dc-donenote">
+          Demo complete — {s?.first_name ?? 'the student'} can now register for this course.
+        </p>
       )}
 
       {/* ── Actions */}

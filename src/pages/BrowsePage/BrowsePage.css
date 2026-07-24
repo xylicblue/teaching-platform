@@ -54,7 +54,8 @@
 .sbf + .sbf { border-left: 1px solid var(--line); }
 .sbf svg    { color: var(--slate); flex: none; }
 
-.sbf input {
+.sbf input,
+.sbf select {
   border: none;
   outline: none;
   background: none;
@@ -63,6 +64,8 @@
   font-size: 15px;
   width: 100%;
   color: var(--ink);
+  appearance: none;
+  cursor: pointer;
 }
 
 .sbf input::placeholder { color: var(--slate); font-weight: 500; }

@@ -1,4 +1,5 @@
-import { AVATAR_COLORS } from '../../data/tutors'
+import { Link } from 'react-router-dom'
+import { AVATAR_COLORS } from '../../lib/catalog'
 import './Stories.css'
 
 const STORIES = [
@@ -20,12 +21,12 @@ export default function Stories() {
             <h2 className="display">Real results.</h2>
             <p>These are a few students who came to us with a deadline and left with a grade.</p>
           </div>
-          <a href="/reviews" className="tlink">
-            Read all reviews
+          <Link to="/tutors" className="tlink">
+            Find your tutor
             <svg className="ar" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <path d="M2.5 7h9M8 3.5l3.5 3.5L8 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </a>
+          </Link>
         </div>
 
         <div className="story-grid">

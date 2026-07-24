@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import './ForParents.css'
 
 const CLAIMS = [
@@ -24,12 +25,12 @@ export default function ForParents() {
             a direct support line. If the first paid session doesn't meet your expectations,
             we refund it. No forms, no delays.
           </p>
-          <a href="/parents" className="for-parents__link">
-            Read our full parent guide
+          <Link to="/tutors" className="for-parents__link">
+            Browse verified tutors
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <path d="M2.5 7h9M8 3.5l3.5 3.5L8 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </a>
+          </Link>
         </div>
 
         {/* Right — chits */}

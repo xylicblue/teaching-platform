@@ -217,7 +217,7 @@ export default function SignUpForm({ onSwitch, onToRole }: Props) {
             </svg>
           </span>
           <span>
-            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+            I agree to Ustaad&rsquo;s terms of use and privacy policy.
             {errors.agree && <span className="hint hint--error" style={{ display: 'block' }}>{errors.agree}</span>}
           </span>
         </label>

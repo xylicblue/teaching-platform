@@ -198,7 +198,7 @@
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
 .tc-top .tct-link { margin-left: auto; flex: none; }
-.teacher-card .tct-bio { font-size: 14.5px; line-height: 1.6; color: var(--ink); margin-top: var(--s5); }
+.teacher-card .tct-bio { max-width: 68ch; font-size: 14.5px; line-height: 1.6; color: var(--ink); margin-top: var(--s5); }
 .teacher-card .tct-bio p + p { margin-top: var(--s3); }
 .edu-label {
   font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;

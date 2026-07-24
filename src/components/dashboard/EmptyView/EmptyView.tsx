@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { EMPTY_TUTORS } from '../../../data/dashboardData'
+import { useCatalog } from '../../../hooks/useCatalog'
+import { colorIndexFromName, initialsOf, fmtPrice } from '../../../lib/catalog'
 
 const FEATURES = [
   {
@@ -22,6 +23,24 @@ const FEATURES = [
 const FCARD_POS = ['fc-1', 'fc-2', 'fc-3']
 
 export default function EmptyView() {
+  const { teachers, courses } = useCatalog()
+
+  /* Three real courses for the floating cards. */
+  const cards = courses.slice(0, 3).map(c => {
+    const teacher = teachers.find(t => t.id === c.teacher_id)
+    const name = teacher?.name ?? 'Teacher'
+    return {
+      key:      c.id,
+      courseId: c.id,
+      initials: teacher?.initials ?? initialsOf(name, null),
+      color:    colorIndexFromName(name),
+      name,
+      sub:      `${c.level} ${c.subject}`,
+      price:    `${fmtPrice(c.rate_per_hour, c.currency)}/hr`,
+      board:    c.exam_board !== 'N/A' ? c.exam_board : c.level,
+    }
+  })
+
   return (
     <div className="empty-wrap">
       <div className="empty-hero">
@@ -47,8 +66,8 @@ export default function EmptyView() {
           <div className="art-grain" />
           <svg className="spark" style={{ top: 30, right: '46%' }} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>
           <svg className="spark" style={{ bottom: 40, right: '38%' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M2 12h20"/></svg>
-          {EMPTY_TUTORS.map((t, i) => (
-            <div className={`fcard ${FCARD_POS[i]}`} key={i}>
+          {cards.map((t, i) => (
+            <div className={`fcard ${FCARD_POS[i]}`} key={t.key}>
               <div className="fc-head">
                 <span className={`av av-c${t.color}`} aria-hidden="true">{t.initials}</span>
                 <div>
@@ -57,7 +76,7 @@ export default function EmptyView() {
                 </div>
               </div>
               <div className="fc-rate">
-                <span><span className="star">★</span> {t.rating}</span>
+                <span>{t.board}</span>
                 <span className="price">{t.price}</span>
               </div>
             </div>

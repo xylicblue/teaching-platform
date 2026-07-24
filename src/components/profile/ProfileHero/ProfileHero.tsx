@@ -1,4 +1,4 @@
-import { AVATAR_COLORS } from '../../../data/profileData'
+import { AVATAR_COLORS } from '../../../lib/catalog'
 import type { TutorProfile } from '../../../data/profileData'
 import './ProfileHero.css'
 
@@ -72,14 +72,18 @@ export default function ProfileHero({ profile }: Props) {
               <span>lessons taught</span>
             </div>
           )}
-          <div className="pstat">
-            <b className="ok">{profile.responseTime}</b>
-            <span>response time</span>
-          </div>
-          <div className="pstat">
-            <b>{profile.yearsExp} yrs</b>
-            <span>teaching since {new Date().getFullYear() - profile.yearsExp}</span>
-          </div>
+          {profile.subjects.length > 0 && (
+            <div className="pstat">
+              <b>{profile.subjects.length}</b>
+              <span>{profile.subjects.length === 1 ? 'course' : 'courses'} running</span>
+            </div>
+          )}
+          {profile.yearsExp > 0 && (
+            <div className="pstat">
+              <b>{profile.yearsExp} yrs</b>
+              <span>teaching since {new Date().getFullYear() - profile.yearsExp}</span>
+            </div>
+          )}
         </div>
 
         {/* Trust pills */}

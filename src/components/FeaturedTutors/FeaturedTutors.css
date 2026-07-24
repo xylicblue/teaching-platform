@@ -104,7 +104,9 @@
   border-radius: 0;
 }
 
-.badge-online {
+.tcard-av--img { object-fit: cover; }
+
+.badge-verified {
   position: absolute;
   top: 10px;
   left: 10px;
@@ -117,27 +119,9 @@
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   backdrop-filter: blur(4px);
 }
-
-.fav {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  display: grid;
-  place-items: center;
-  color: #5C544A;
-  cursor: pointer;
-  transition: color 180ms ease;
-}
-
-.fav:hover { color: #B0532A; }
 
 .price-chip {
   position: absolute;
@@ -183,12 +167,20 @@
   margin-top: 3px;
 }
 
-.tc-rating {
+.tc-exp {
   text-align: right;
   flex-shrink: 0;
+  line-height: 1.1;
 }
 
-.tc-rating .rc {
+.tc-exp b {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: #1F1B16;
+}
+
+.tc-exp span {
   display: block;
   font-size: 11px;
   margin-top: 2px;
@@ -196,6 +188,9 @@
 }
 
 .tc-cred {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
   font-size: 12.5px;
   color: #5C544A;
   margin-top: 11px;
@@ -204,7 +199,24 @@
   line-height: 1.4;
 }
 
-.tc-cred b { color: #1F1B16; font-weight: 600; }
+.tc-cred svg { flex-shrink: 0; margin-top: 2px; color: #7A7164; }
+
+.tc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.tc-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: #1F4A3D;
+  background: #E7EFE9;
+  border: 1px solid #cfe0d6;
+  border-radius: 9999px;
+  padding: 2px 8px;
+}
 
 .tc-avail {
   display: flex;
@@ -257,6 +269,29 @@
   display: flex;
   justify-content: center;
   margin-top: 36px;
+}
+
+/* No live tutors yet */
+.featured-empty {
+  background: #fff;
+  border: 1px solid #E0D8C9;
+  border-radius: 10px;
+  padding: 44px 32px;
+  text-align: center;
+}
+
+.featured-empty p:first-child {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1F1B16;
+}
+
+.featured-empty p + p {
+  color: #5C544A;
+  font-size: 14.5px;
+  margin: 8px auto 20px;
+  max-width: 46ch;
 }
 
 @media (max-width: 1080px) {

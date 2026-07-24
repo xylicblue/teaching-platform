@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import SocialButtons from '../SocialButtons/SocialButtons'
 import { supabase, isSupabaseConfigured } from '../../../lib/supabase'
 import './SignInForm.css'
@@ -17,6 +16,30 @@ export default function SignInForm({ onSwitch, onSuccess }: Props) {
   const [errors,   setErrors]   = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState('')
   const [loading,  setLoading]  = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [resetNote, setResetNote] = useState('')
+
+  /* Password reset, using the email already typed into the form. */
+  async function handleReset() {
+    setApiError('')
+    setResetNote('')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrors(x => ({ ...x, email: 'Enter your email first, then tap Forgot password.' }))
+      return
+    }
+    if (!isSupabaseConfigured) {
+      setResetNote('Password reset is not available in this preview.')
+      return
+    }
+    setResetting(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/signin`,
+    })
+    setResetting(false)
+    setResetNote(error
+      ? 'Could not send the reset email. Please try again.'
+      : `Reset link sent to ${email}. Check your inbox.`)
+  }
 
   function validate() {
     const e: Record<string, string> = {}
@@ -120,9 +143,12 @@ export default function SignInForm({ onSwitch, onSuccess }: Props) {
             </span>
             Remember me
           </label>
-          <Link className="forgot" to="/forgot-password">Forgot password?</Link>
+          <button type="button" className="forgot" onClick={handleReset} disabled={resetting}>
+            {resetting ? 'Sending…' : 'Forgot password?'}
+          </button>
         </div>
 
+        {resetNote && <p className="hint" role="status" style={{ marginBottom: 'var(--s2)' }}>{resetNote}</p>}
         {apiError && <p className="hint hint--error" role="alert" style={{ marginBottom: 'var(--s2)' }}>{apiError}</p>}
 
         <button type="submit" className={`btn btn-primary submit${loading ? ' loading' : ''}`} disabled={loading}>
@@ -140,7 +166,7 @@ export default function SignInForm({ onSwitch, onSuccess }: Props) {
       </p>
 
       <p className="fp-legal">
-        Protected by reCAPTCHA · <Link to="/privacy">Privacy</Link> · <Link to="/terms">Terms</Link>
+        By signing in you agree to our terms of use.
       </p>
     </div>
   )

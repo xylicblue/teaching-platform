@@ -6,12 +6,13 @@ import PopulatedView from '../../components/dashboard/PopulatedView/PopulatedVie
 import EmptyView     from '../../components/dashboard/EmptyView/EmptyView'
 import TeacherDashboard from '../TeacherDashboard/TeacherDashboard'
 import AdminDashboard   from '../AdminDashboard/AdminDashboard'
-import { STATS } from '../../data/dashboardData'
+import MyDemos       from '../../components/dashboard/MyDemos/MyDemos'
+import MyEnrollments from '../../components/dashboard/MyEnrollments/MyEnrollments'
+import { useStudentDashboard } from '../../hooks/useStudentDashboard'
 import { supabase } from '../../lib/supabase'
 import './DashboardPage.css'
 
-type Role  = 'student' | 'parent'
-type State = 'populated' | 'empty'
+type Role = 'student' | 'parent'
 
 const STAT_ICON: Record<string, React.ReactNode> = {
   calendar: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>,
@@ -22,7 +23,6 @@ const STAT_ICON: Record<string, React.ReactNode> = {
 
 export default function DashboardPage() {
   const [role,      setRole]      = useState<Role>('student')
-  const [state,     setState]     = useState<State>('populated')
   const [active,    setActive]    = useState('dashboard')
   const [sideOpen,  setSideOpen]  = useState(false)
   const [appStatus,    setAppStatus]    = useState<string | null>(null)
@@ -33,6 +33,12 @@ export default function DashboardPage() {
     !!sessionStorage.getItem('_ust_role')
   )
   const [teacherMode,  setTeacherMode]  = useState(false)
+  const [userId,       setUserId]       = useState<string | null>(null)
+  const [firstName,    setFirstName]    = useState<string | null>(null)
+  const [fullName,     setFullName]     = useState<string | null>(null)
+  const [avatarUrl,    setAvatarUrl]    = useState<string | null>(null)
+
+  const dash = useStudentDashboard(userId)
 
   useEffect(() => {
     document.body.classList.add('dashboard-page')
@@ -42,6 +48,7 @@ export default function DashboardPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setRoleResolved(true); return }
+      setUserId(user.id)
       supabase
         .from('teacher_applications')
         .select('status')
@@ -50,16 +57,30 @@ export default function DashboardPage() {
         .then(({ data }) => setAppStatus(data?.status ?? null))
 
       const cached = sessionStorage.getItem('_ust_role')
-      if (cached) { setUserRole(cached); setRoleResolved(true); return }
+      if (cached) {
+        setUserRole(cached)
+        setRoleResolved(true)
+        supabase.from('profiles')
+          .select('first_name, last_name, avatar_url').eq('id', user.id).single()
+          .then(({ data }) => {
+            setFirstName(data?.first_name ?? null)
+            setFullName([data?.first_name, data?.last_name].filter(Boolean).join(' ') || null)
+            setAvatarUrl(data?.avatar_url ?? null)
+          })
+        return
+      }
 
       supabase
         .from('profiles')
-        .select('role')
+        .select('role, first_name, last_name, avatar_url')
         .eq('id', user.id)
         .single()
         .then(({ data }) => {
           const r = data?.role ?? null
           setUserRole(r)
+          setFirstName(data?.first_name ?? null)
+          setFullName([data?.first_name, data?.last_name].filter(Boolean).join(' ') || null)
+          setAvatarUrl(data?.avatar_url ?? null)
           if (r) sessionStorage.setItem('_ust_role', r)
           setRoleResolved(true)
         })
@@ -78,14 +99,18 @@ export default function DashboardPage() {
   if (userRole === 'admin' && teacherMode) return <TeacherDashboard onBackToAdmin={() => setTeacherMode(false)} />
   if (userRole === 'admin') return <AdminDashboard onTeacherMode={() => setTeacherMode(true)} />
 
-  const isEmpty = state === 'empty'
+  /* A brand-new student has no enrolments and no demo requests. */
+  const isEmpty = dash.isNew
 
-  const greeting = isEmpty ? 'Welcome to Ustaad, Sarah' : 'Welcome back, Sarah'
+  const who = firstName ? `, ${firstName}` : ''
+  const greeting = isEmpty ? `Welcome to Ustaad${who}` : `Welcome back${who}`
   const subline  = isEmpty
-    ? "Let's find your first tutor."
+    ? 'Find a tutor and book a free demo class to get started.'
     : role === 'parent'
-      ? "Here's how Sarah's learning is going."
-      : 'Continue your learning journey.'
+      ? "Here's how your child's learning is going."
+      : dash.nextSession
+        ? `Your next class is ${dash.nextSession.date.toLowerCase()} at ${dash.nextSession.time.split('–')[0].trim()}.`
+        : 'Pick up where you left off.'
 
   return (
     <>
@@ -96,10 +121,19 @@ export default function DashboardPage() {
           open={sideOpen}
           active={active}
           onNavigate={id => { setActive(id); setSideOpen(false) }}
+          userName={fullName ?? firstName}
+          userRole={role}
+          avatarUrl={avatarUrl}
+          unread={dash.unreadCount}
         />
 
         <div className="main">
-          <Topbar role={role} onRole={setRole} onOpenMenu={() => setSideOpen(true)} />
+          <Topbar
+            role={role}
+            onRole={setRole}
+            onOpenMenu={() => setSideOpen(true)}
+            unread={dash.unreadCount}
+          />
 
           <div className="canvas">
             {appStatus === 'approved' && (
@@ -128,13 +162,6 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Prototype state toggle */}
-            <div className="state-toggle">
-              <span className="lbl">Preview state</span>
-              <button data-state="populated" aria-pressed={!isEmpty} onClick={() => setState('populated')}>Active learner</button>
-              <button data-state="empty"     aria-pressed={isEmpty}  onClick={() => setState('empty')}>New user</button>
-            </div>
-
             {/* Welcome hero */}
             <div className="welcome">
               <div>
@@ -142,15 +169,14 @@ export default function DashboardPage() {
                 <p className="sub">{subline}</p>
               </div>
               <div className="w-cta">
-                <a className="btn btn-outline" href="#">View schedule</a>
                 <Link className="btn btn-primary" to="/tutors">Browse tutors</Link>
               </div>
             </div>
 
-            {/* Stat chips (populated only) */}
+            {/* Stat chips — live counts */}
             {!isEmpty && (
               <div className="statrow">
-                {STATS.map((s, i) => (
+                {dash.stats.map((s, i) => (
                   <div className="statchip" key={i}>
                     <span className={`si ${s.tone}`}>{STAT_ICON[s.icon]}</span>
                     <div><b>{s.value}</b><span>{s.label}</span></div>
@@ -159,7 +185,11 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {isEmpty ? <EmptyView /> : <PopulatedView key={role} />}
+            {/* Anything needing the student's attention, before the overview */}
+            <MyEnrollments userId={userId} />
+            <MyDemos userId={userId} />
+
+            {isEmpty ? <EmptyView /> : <PopulatedView data={dash} />}
           </div>
         </div>
       </div>

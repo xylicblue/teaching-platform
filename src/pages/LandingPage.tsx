@@ -1,7 +1,7 @@
 import Navbar        from '../components/Navbar/Navbar'
 import Hero          from '../components/Hero/Hero'
 import StatsStrip    from '../components/StatsStrip/StatsStrip'
-import OnlineNow     from '../components/OnlineNow/OnlineNow'
+import LatestCourses from '../components/LatestCourses/LatestCourses'
 import Catalog       from '../components/Catalog/Catalog'
 import FeaturedTutors from '../components/FeaturedTutors/FeaturedTutors'
 import HowItWorks    from '../components/HowItWorks/HowItWorks'
@@ -11,6 +11,7 @@ import BookingWidget from '../components/BookingWidget/BookingWidget'
 import ForParents    from '../components/ForParents/ForParents'
 import ForTeachers   from '../components/ForTeachers/ForTeachers'
 import Footer        from '../components/Footer/Footer'
+import { Link }      from 'react-router-dom'
 import './LandingPage.css'
 
 export default function LandingPage() {
@@ -21,7 +22,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <StatsStrip />
-        <OnlineNow />
+        <LatestCourses />
         <Catalog />
         <FeaturedTutors />
         <HowItWorks />
@@ -36,8 +37,8 @@ export default function LandingPage() {
 
       {/* Mobile sticky CTA */}
       <div className="mcta" aria-label="Quick actions">
-        <a href="/tutors" className="btn btn-outline">Browse tutors</a>
-        <a href="/demo"   className="btn btn-primary">Book free demo</a>
+        <Link to="/tutors" className="btn btn-outline">Browse tutors</Link>
+        <a href="#book"    className="btn btn-primary">Book free demo</a>
       </div>
     </div>
   )

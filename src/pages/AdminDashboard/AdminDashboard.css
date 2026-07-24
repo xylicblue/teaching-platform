@@ -476,8 +476,12 @@ body.admin-page { background: var(--paper-2); }
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  overflow: hidden;
+  /* Seven-column tables must scroll on a phone, not be cut off. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
+.admin-table-wrap table { min-width: 640px; }
 
 .admin-table {
   width: 100%;
@@ -592,6 +596,7 @@ body.admin-page { background: var(--paper-2); }
   right: 0;
   bottom: 0;
   width: 500px;
+  max-width: 100vw;
   background: var(--white);
   border-left: 1px solid var(--line);
   box-shadow: var(--shadow-3);
@@ -1079,4 +1084,47 @@ body.admin-page { background: var(--paper-2); }
 
 @media (prefers-reduced-motion: reduce) {
   .admin-wrap * { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+}
+
+/* ── Demo classes view ──────────────────────────────────────────────────────── */
+/* Scheduled demos are information, not a to-do — keep the badge calm so the
+   saffron "needs action" badges stay meaningful. */
+.admin-nav-badge--calm {
+  background: var(--evergreen-t);
+  color: var(--evergreen);
+}
+
+.admin-empty {
+  padding: var(--s7) 0;
+  text-align: center;
+  color: var(--slate);
+  font-size: 14.5px;
+}
+
+.ad-meetlink {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--evergreen);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+.ad-meetlink:hover { color: var(--evergreen-d); }
+
+/* ── Registrations view ─────────────────────────────────────────────────────── */
+.admin-note-bar {
+  padding: 11px 15px;
+  margin-bottom: var(--s4);
+  background: var(--paper-2);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-btn);
+  font-size: 13px;
+  color: var(--slate);
+}
+.admin-note-bar b { color: var(--ink); font-weight: 600; }
+
+.ad-amount {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
 }

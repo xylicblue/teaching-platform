@@ -452,9 +452,13 @@
   .navbar__search { display: none; }
 }
 
+@media (max-width: 900px) {
+  .navbar__inner { padding: 0 22px; }
+}
+
 @media (max-width: 768px) {
   .navbar__nav,
   .navbar__actions { display: none; }
   .navbar__hamburger { display: flex; }
-  .navbar__inner { padding: 0 16px; gap: 0; }
+  .navbar__inner { padding: 0 16px; gap: 0; justify-content: space-between; }
 }

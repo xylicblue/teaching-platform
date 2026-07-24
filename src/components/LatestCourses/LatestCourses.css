@@ -1,0 +1,121 @@
+.lcourses {
+  background: #F4EFE5;
+  border-top: 1px solid #E0D8C9;
+  border-bottom: 1px solid #E0D8C9;
+  padding: 0 0 22px;
+}
+
+.lcourses-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 16px;
+}
+
+/* Horizontal scroll rail */
+.hscroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: #E0D8C9 transparent;
+}
+
+.hscroll::-webkit-scrollbar { height: 5px; }
+.hscroll::-webkit-scrollbar-thumb { background: #E0D8C9; border-radius: 3px; }
+
+/* Mini course card */
+.mini {
+  flex: none;
+  width: 248px;
+  scroll-snap-align: start;
+  background: #fff;
+  border: 1px solid #E0D8C9;
+  border-radius: 10px;
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.mini:hover {
+  transform: translateY(-2px);
+  border-color: #1F4A3D;
+  box-shadow: 0 6px 22px rgba(31, 27, 22, 0.1);
+}
+
+.mini-top {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.mini-av-wrap { position: relative; flex-shrink: 0; }
+.mini-id { min-width: 0; }
+
+.mini-av {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #FAF7F2;
+}
+.mini-av--img { object-fit: cover; }
+
+.mn {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.2;
+  color: #1F1B16;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ms { font-size: 12px; color: #5C544A; margin-top: 3px; }
+
+.mini-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.mini-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: #5C544A;
+  border: 1px solid #E0D8C9;
+  background: #FAF7F2;
+  border-radius: 9999px;
+  padding: 2px 8px;
+}
+
+.mini-sched {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #5C544A;
+}
+.mini-sched svg { flex-shrink: 0; color: #7A7164; }
+
+.mini-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #EFE9DD;
+  margin-top: auto;
+}
+
+.mini-demo {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #3B6E54;
+}

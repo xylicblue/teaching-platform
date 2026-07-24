@@ -130,6 +130,7 @@
   flex-shrink: 0;
 }
 .hero-av-sm:first-child { margin-left: 0; }
+.hero-av-sm--img { object-fit: cover; }
 
 .ht { display: flex; align-items: center; gap: 8px; }
 .ht b {
@@ -147,9 +148,16 @@
   font-weight: 600; color: #FAF7F2;
   flex-shrink: 0; line-height: 1;
 }
+.hero-av--img { object-fit: cover; }
 
 /* ── card collage ── */
 .hero-collage { position: relative; height: 520px; }
+
+/* Fewer than three live courses — pull the canvas in so the cards and the
+   stat chips stay in one composition instead of drifting apart. */
+.hero-collage--sparse { height: 320px; }
+.hero-collage--sparse .float-1 { top: 168px; left: -14px; }
+.hero-collage--sparse .float-2 { bottom: 4px; left: 34%; }
 
 .fc {
   position: absolute;
@@ -176,6 +184,15 @@
 .fc-foot {
   display: flex; align-items: center;
   justify-content: space-between; margin-top: 12px;
+}
+.fc-board {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .02em;
+  color: #1F4A3D;
+  background: #E7EFE9;
+  border: 1px solid #cfe0d6;
+  border-radius: 9999px;
+  padding: 3px 9px;
 }
 
 .fc-1 { top:   6px; left:   0; width: 260px; transform: rotate(-3deg);   z-index: 4; }
@@ -210,9 +227,11 @@
 @media (max-width: 1024px) {
   .hero-grid { grid-template-columns: 1fr; gap: 48px; }
   .hero-collage { height: 440px; max-width: 460px; margin: 0 auto; }
+  .hero-collage--sparse { height: 300px; }
 }
 @media (max-width: 640px) {
   .hero { padding: 48px 0 64px; }
+  .hero-collage--sparse { height: 240px; }
   .hero-wrap { padding: 0 16px; }
   .hero-search { flex-direction: column; }
   .hsf + .hsf { border-left: none; border-top: 1px solid #E0D8C9; }
@@ -228,11 +247,12 @@
   .hero { padding: 36px 0 48px; }
   .hero-h1 { font-size: 32px; }
   .hero-lede { font-size: 16px; }
-  .hero-collage { height: 290px; }
-  .fc-1 { width: 168px; top: 4px; }
-  .fc-2 { width: 162px; top: 80px; }
-  .fc-3 { width: 172px; top: 196px; left: 16px; }
-  .fc-4 { width: 152px; top: 296px; }
+  .hero-collage { height: 330px; }
+  .hero-collage--sparse { height: 210px; }
+  .fc-1 { width: 168px; top: 0; }
+  .fc-2 { width: 162px; top: 78px; }
+  .fc-3 { width: 172px; top: 168px; left: 16px; }
+  .fc-4 { width: 152px; top: 250px; }
   .hero-trust { gap: 14px; }
   .ht b { font-size: 18px; }
 }

@@ -107,9 +107,11 @@ async function fetchCourse(courseId: string): Promise<{
       .select('first_name, last_name, avatar_url, bio')
       .eq('id', course.teacher_id)
       .single(),
-    supabase.from('teacher_applications')
-      .select('years_exp, city, country, education, bio')
-      .eq('user_id', course.teacher_id)
+    // teacher_public (migration 009) — teacher_applications is RLS-locked to
+    // self/admin, so an anonymous visitor would read nothing from it.
+    supabase.from('teacher_public')
+      .select('years_exp, city, country, education')
+      .eq('id', course.teacher_id)
       .maybeSingle(),
     supabase.from('demo_requests')
       .select('*', { count: 'exact', head: true })
@@ -124,10 +126,10 @@ async function fetchCourse(courseId: string): Promise<{
     first_name: prof?.first_name ?? '',
     last_name:  prof?.last_name  ?? null,
     avatar_url: prof?.avatar_url ?? null,
-    bio:        prof?.bio || app?.bio || null,
+    bio:        prof?.bio ?? null,
     years_exp:  app?.years_exp   ?? null,
     city:       app?.city        ?? null,
-    country:    app?.country     ?? null,
+    country:    app?.country === 'PK' ? 'Pakistan' : (app?.country ?? null),
     education:  (app?.education ?? []) as TeacherData['education'],
   }
 
@@ -192,7 +194,7 @@ export default function CoursePage() {
   const timeLbl     = timeLabel(course.days_of_week ?? [], course.class_times ?? {})
   const offDays     = ALL_DAYS.filter(d => !(course.days_of_week ?? []).includes(d))
   const profileHref = `/tutors/${course.teacher_id}`
-  const bookHref    = `${profileHref}#book`
+  const bookHref    = `/courses/${course.id}/demo`
 
   /* enrolled avatar colours — pick 3 distinct ones */
   const enrollAvs = ['av-c0','av-c1','av-c7']

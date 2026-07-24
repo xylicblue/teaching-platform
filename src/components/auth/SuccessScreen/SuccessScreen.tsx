@@ -18,10 +18,18 @@ function cap(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
+/** Name the place we're actually sending them, so the copy never lies. */
+function destinationFor(redirectTo: string | undefined, role: string | undefined): string {
+  if (redirectTo?.includes('/demo'))  return 'your demo booking'
+  if (redirectTo?.startsWith('/apply')) return 'your teacher application'
+  if (redirectTo?.startsWith('/courses')) return 'the course'
+  if (redirectTo?.startsWith('/tutors'))  return 'the tutor'
+  if (redirectTo) return 'where you left off'
+  return role ? (DEST[role] ?? 'your dashboard') : 'your dashboard'
+}
+
 export default function SuccessScreen({ name, role, isSignIn, redirectTo }: Props) {
-  const dest = redirectTo
-    ? 'your teacher application'
-    : role ? (DEST[role] ?? 'your dashboard') : 'your dashboard'
+  const dest = destinationFor(redirectTo, role)
   const navigate = useNavigate()
 
   useEffect(() => {
