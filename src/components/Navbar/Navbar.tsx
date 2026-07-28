@@ -55,12 +55,12 @@ export default function Navbar() {
       setAppStatus(null)
       setUserRole(null)
       sessionStorage.removeItem('_ust_app_status')
-      sessionStorage.removeItem('_ust_role')
+      sessionStorage.removeItem('_ust_role_v2')
       return
     }
     const cached = sessionStorage.getItem('_ust_app_status')
     if (cached) setAppStatus(cached)
-    const cachedRole = sessionStorage.getItem('_ust_role')
+    const cachedRole = sessionStorage.getItem('_ust_role_v2')
     if (cachedRole) setUserRole(cachedRole)
 
     supabase
@@ -83,8 +83,8 @@ export default function Navbar() {
       .then(({ data }) => {
         const r = data?.role ?? null
         setUserRole(r)
-        if (r) sessionStorage.setItem('_ust_role', r)
-        else   sessionStorage.removeItem('_ust_role')
+        if (r) sessionStorage.setItem('_ust_role_v2', r)
+        else   sessionStorage.removeItem('_ust_role_v2')
       })
   }, [user])
 
@@ -103,12 +103,15 @@ export default function Navbar() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     sessionStorage.removeItem('_ust_app_status')
-    sessionStorage.removeItem('_ust_role')
+    sessionStorage.removeItem('_ust_role_v2')
     setDropOpen(false)
     setMenuOpen(false)
     window.location.href = '/'
   }
 
+  // An admin approved as a teacher keeps role 'admin' but is still a teacher.
+  // "Teacher" therefore means: role is teacher, OR an approved application.
+  const isTeacher = userRole === 'teacher' || appStatus === 'approved'
   const displayName = user ? getDisplayName(user) : null
   const avatarUrl   = user?.user_metadata?.avatar_url as string | undefined
 
@@ -165,7 +168,7 @@ export default function Navbar() {
                     </span>
                   )}
                   <span className="navbar__user-name">{displayName}</span>
-                  {userRole === 'teacher' ? (
+                  {isTeacher ? (
                     <span className="navbar__verified-dot" title="Verified teacher" />
                   ) : appStatus === 'pending' ? (
                     <span className="navbar__pending-dot" title="Teaching application pending" />
@@ -187,10 +190,10 @@ export default function Navbar() {
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                       My dashboard
                     </Link>
-                    {userRole === 'teacher' ? (
+                    {isTeacher ? (
                       <div className="navbar__drop-item navbar__drop-item--status navbar__drop-item--verified" role="status">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4 12 14.01l-3-3"/></svg>
-                        Verified teacher
+                        {userRole === 'admin' ? 'Admin & teacher' : 'Verified teacher'}
                         <span className="navbar__drop-badge navbar__drop-badge--verified">Verified</span>
                       </div>
                     ) : appStatus === 'pending' ? (
@@ -285,9 +288,12 @@ export default function Navbar() {
               <Link to="/dashboard" className="navbar__cta navbar__cta--large" onClick={() => setMenuOpen(false)}>
                 My dashboard
               </Link>
-              <Link to="/apply" className="navbar__mobile-signin" onClick={() => setMenuOpen(false)}>
-                Apply to teach →
-              </Link>
+              {/* Already a teacher (incl. an admin who teaches) → no apply prompt */}
+              {!isTeacher && appStatus !== 'pending' && (
+                <Link to="/apply" className="navbar__mobile-signin" onClick={() => setMenuOpen(false)}>
+                  Apply to teach →
+                </Link>
+              )}
               <button className="navbar__mobile-signout" onClick={handleSignOut}>
                 Sign out
               </button>

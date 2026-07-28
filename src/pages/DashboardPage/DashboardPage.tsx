@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Sidebar       from '../../components/dashboard/Sidebar/Sidebar'
 import Topbar        from '../../components/dashboard/Topbar/Topbar'
 import PopulatedView from '../../components/dashboard/PopulatedView/PopulatedView'
@@ -25,14 +25,18 @@ export default function DashboardPage() {
   const [role,      setRole]      = useState<Role>('student')
   const [active,    setActive]    = useState('dashboard')
   const [sideOpen,  setSideOpen]  = useState(false)
+  const navigate = useNavigate()
   const [appStatus,    setAppStatus]    = useState<string | null>(null)
+  const [appResolved,  setAppResolved]  = useState(false)
+  // Cache is an initial-paint hint only — the effect below always reconciles
+  // against the DB, so a role change (e.g. admin approved as teacher) can't get
+  // stuck behind a stale value. The _v2 suffix flushes pre-fix caches once.
   const [userRole,     setUserRole]     = useState<string | null>(
-    sessionStorage.getItem('_ust_role')
+    sessionStorage.getItem('_ust_role_v2')
   )
   const [roleResolved, setRoleResolved] = useState(
-    !!sessionStorage.getItem('_ust_role')
+    !!sessionStorage.getItem('_ust_role_v2')
   )
-  const [teacherMode,  setTeacherMode]  = useState(false)
   const [userId,       setUserId]       = useState<string | null>(null)
   const [firstName,    setFirstName]    = useState<string | null>(null)
   const [fullName,     setFullName]     = useState<string | null>(null)
@@ -47,29 +51,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setRoleResolved(true); return }
+      if (!user) { setRoleResolved(true); setAppResolved(true); return }
       setUserId(user.id)
       supabase
         .from('teacher_applications')
         .select('status')
         .eq('user_id', user.id)
         .maybeSingle()
-        .then(({ data }) => setAppStatus(data?.status ?? null))
+        .then(({ data }) => { setAppStatus(data?.status ?? null); setAppResolved(true) })
 
-      const cached = sessionStorage.getItem('_ust_role')
-      if (cached) {
-        setUserRole(cached)
-        setRoleResolved(true)
-        supabase.from('profiles')
-          .select('first_name, last_name, avatar_url').eq('id', user.id).single()
-          .then(({ data }) => {
-            setFirstName(data?.first_name ?? null)
-            setFullName([data?.first_name, data?.last_name].filter(Boolean).join(' ') || null)
-            setAvatarUrl(data?.avatar_url ?? null)
-          })
-        return
-      }
-
+      // Always read role from the DB and reconcile — never trust the cache as
+      // the source of truth.
       supabase
         .from('profiles')
         .select('role, first_name, last_name, avatar_url')
@@ -81,13 +73,16 @@ export default function DashboardPage() {
           setFirstName(data?.first_name ?? null)
           setFullName([data?.first_name, data?.last_name].filter(Boolean).join(' ') || null)
           setAvatarUrl(data?.avatar_url ?? null)
-          if (r) sessionStorage.setItem('_ust_role', r)
+          if (r) sessionStorage.setItem('_ust_role_v2', r)
+          else   sessionStorage.removeItem('_ust_role_v2')
           setRoleResolved(true)
         })
     })
   }, [])
 
-  if (!roleResolved) {
+  // For an admin, the teacher-vs-admin decision depends on the application
+  // status too — wait for both so we never flash the wrong dashboard.
+  if (!roleResolved || !appResolved) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'var(--paper-2)' }}>
         <p style={{ color:'var(--slate)', fontSize:'14px' }}>Loading…</p>
@@ -95,9 +90,13 @@ export default function DashboardPage() {
     )
   }
 
+  // An admin who was approved to teach keeps role 'admin'. Their "My dashboard"
+  // (/dashboard) is their teaching workspace; the admin panel lives at /admin.
+  const adminAlsoTeaches = userRole === 'admin' && appStatus === 'approved'
+
   if (userRole === 'teacher') return <TeacherDashboard />
-  if (userRole === 'admin' && teacherMode) return <TeacherDashboard onBackToAdmin={() => setTeacherMode(false)} />
-  if (userRole === 'admin') return <AdminDashboard onTeacherMode={() => setTeacherMode(true)} />
+  if (adminAlsoTeaches) return <TeacherDashboard onBackToAdmin={() => navigate('/admin')} />
+  if (userRole === 'admin') return <AdminDashboard />
 
   /* A brand-new student has no enrolments and no demo requests. */
   const isEmpty = dash.isNew
