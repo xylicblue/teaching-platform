@@ -4,7 +4,7 @@ import { supabase } from '../../../lib/supabase'
 import { fmtPrice } from '../../../lib/catalog'
 import './MyEnrollments.css'
 
-type Status = 'pending_payment' | 'active' | 'paused' | 'cancelled' | 'completed'
+type Status = 'pending_payment' | 'awaiting_verification' | 'active' | 'paused' | 'cancelled' | 'completed'
 
 type Row = {
   id: string
@@ -21,11 +21,12 @@ type Row = {
 }
 
 const LABEL: Record<Status, string> = {
-  pending_payment: 'Payment pending',
-  active:          'Active',
-  paused:          'Paused',
-  cancelled:       'Cancelled',
-  completed:       'Finished',
+  pending_payment:       'Payment due',
+  awaiting_verification: 'Verifying payment',
+  active:                'Active',
+  paused:                'Paused',
+  cancelled:             'Cancelled',
+  completed:             'Finished',
 }
 
 export default function MyEnrollments({ userId }: { userId: string | null }) {
@@ -86,8 +87,15 @@ export default function MyEnrollments({ userId }: { userId: string | null }) {
 
                 {r.status === 'pending_payment' && (
                   <p className="myenrol-note">
-                    Your place is held. Nothing has been charged yet — we&rsquo;ll email you
-                    when checkout opens.
+                    Your place is held. Transfer the fee and upload your receipt to
+                    confirm your classes.
+                  </p>
+                )}
+
+                {r.status === 'awaiting_verification' && (
+                  <p className="myenrol-note">
+                    We&rsquo;re checking your transfer. You&rsquo;ll be notified as soon as
+                    it&rsquo;s confirmed — usually within a few hours.
                   </p>
                 )}
 
@@ -106,8 +114,13 @@ export default function MyEnrollments({ userId }: { userId: string | null }) {
                   <span>first month</span>
                 </div>
                 {r.status === 'pending_payment' && (
+                  <Link className="btn btn-primary btn-sm" to={`/courses/${r.course_id}/enroll`}>
+                    Pay now
+                  </Link>
+                )}
+                {r.status === 'awaiting_verification' && (
                   <Link className="btn btn-outline btn-sm" to={`/courses/${r.course_id}/enroll`}>
-                    View details
+                    View submission
                   </Link>
                 )}
               </div>

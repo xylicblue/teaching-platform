@@ -103,14 +103,13 @@ export default function TeacherApplyPage() {
           }
           supabase
             .from('profiles')
-            .select('first_name, last_name, phone')
+            .select('first_name, last_name')
             .eq('id', user.id)
             .single()
             .then(({ data }) => {
               if (data) {
                 if (data.first_name) setFirstName(data.first_name)
                 if (data.last_name)  setLastName(data.last_name)
-                if (data.phone)      setPhone(data.phone)
               }
               setPageReady(true)
             })

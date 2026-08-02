@@ -64,6 +64,8 @@ export default function DemoRequestPage() {
 
   const [slot,       setSlot]       = useState<string | null>(null)
   const [otherTime,  setOtherTime]  = useState('')
+  const [whatsapp,   setWhatsapp]   = useState('')
+  const [waTouched,  setWaTouched]  = useState(false)
   const [note,       setNote]       = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [apiError,   setApiError]   = useState('')
@@ -86,6 +88,21 @@ export default function DemoRequestPage() {
           if (!alive) return
           setRole(data?.role ?? 'student')
           setChecking(false)
+        })
+
+      // Prefill from the student's own last request. Deliberately NOT from
+      // profiles.phone — that column is readable by anyone, so a WhatsApp
+      // number must never be mirrored there.
+      supabase
+        .from('demo_requests')
+        .select('student_whatsapp')
+        .eq('student_id', session.user.id)
+        .not('student_whatsapp', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (alive && data?.student_whatsapp) setWhatsapp(data.student_whatsapp)
         })
     })
     return () => { alive = false }
@@ -162,21 +179,35 @@ export default function DemoRequestPage() {
     ? otherTime.trim()
     : slots.find(s => s.key === slot)?.label ?? ''
 
+  /* Pakistani mobiles are 03xx-xxxxxxx; also accept +92 and other countries.
+     Deliberately permissive on format, strict on "there must be a real number". */
+  const waDigits  = whatsapp.replace(/[^\d]/g, '')
+  const waValid   = waDigits.length >= 10 && waDigits.length <= 15
+  const waError   = waTouched && !waValid
+    ? whatsapp.trim() === ''
+      ? 'We need a WhatsApp number to reach you about this class.'
+      : 'That does not look like a complete number. Include the area code.'
+    : ''
+
   const isOwnCourse = !!(teacher && userId && teacher.id === userId)
-  const canSubmit   = !!preferredTime && !submitting && !isOwnCourse
+  const canSubmit   = !!preferredTime && waValid && !submitting && !isOwnCourse
 
   async function handleSubmit() {
-    if (!course || !userId || !canSubmit) return
+    if (!course || !userId || !canSubmit) { setWaTouched(true); return }
     setSubmitting(true)
     setApiError('')
 
+    const wa = whatsapp.trim()
+
     const { error } = await supabase.from('demo_requests').insert({
-      course_id:      course.id,
-      teacher_id:     course.teacher_id,
-      student_id:     userId,
-      student_note:   note.trim() || null,
-      preferred_time: preferredTime,
+      course_id:         course.id,
+      teacher_id:        course.teacher_id,
+      student_id:        userId,
+      student_note:      note.trim() || null,
+      preferred_time:    preferredTime,
+      student_whatsapp:  wa,
     })
+
 
     setSubmitting(false)
 
@@ -375,13 +406,53 @@ export default function DemoRequestPage() {
             )}
           </section>
 
-          {/* Step 2 — note */}
+          {/* Step 2 — WhatsApp (required) */}
           <section className="dr-step">
             <div className="dr-step-head">
               <span className="dr-num mono">02</span>
               <div>
+                <h2>Your WhatsApp number</h2>
+                <p>
+                  Required. This is how we confirm your class and reach you if the
+                  time needs to change.
+                </p>
+              </div>
+            </div>
+
+            <div className="dr-wa">
+              <span className="dr-wa-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.1-.7.2-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6.1-1.7-.9-2.9-1.6-4-3.5-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.7-1.6-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.3 5.2 4.6 1.9.8 2.7.9 3.6.8.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/>
+                  <path d="M12 2A10 10 0 0 0 3.5 17.2L2 22l4.9-1.5A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .9.9-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/>
+                </svg>
+              </span>
+              <input
+                className={`dr-input dr-wa-input${waError ? ' dr-input--err' : ''}`}
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={whatsapp}
+                maxLength={20}
+                placeholder="03xx xxxxxxx"
+                aria-label="Your WhatsApp number"
+                aria-invalid={!!waError}
+                aria-describedby={waError ? 'dr-wa-err' : undefined}
+                onChange={e => setWhatsapp(e.target.value)}
+                onBlur={() => setWaTouched(true)}
+              />
+            </div>
+            {waError
+              ? <p className="dr-field-err" id="dr-wa-err" role="alert">{waError}</p>
+              : <p className="dr-field-hint">We never show your number publicly.</p>}
+          </section>
+
+          {/* Step 3 — note */}
+          <section className="dr-step">
+            <div className="dr-step-head">
+              <span className="dr-num mono">03</span>
+              <div>
                 <h2>What do you want help with?</h2>
-                <p>Optional, but it lets the teacher plan the 30 minutes properly.</p>
+                <p>Optional, but it lets the teacher plan the session properly.</p>
               </div>
             </div>
             <textarea

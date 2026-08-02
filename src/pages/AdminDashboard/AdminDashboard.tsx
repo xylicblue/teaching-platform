@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import PaymentsView from './PaymentsView'
 import './AdminDashboard.css'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
-type AdminView = 'overview' | 'applications' | 'users' | 'courses' | 'demos' | 'enrollments'
+type AdminView = 'overview' | 'applications' | 'users' | 'courses' | 'demos' | 'enrollments' | 'payments'
 type AppStatus = 'pending' | 'approved' | 'rejected'
 type AppFilter = 'all' | AppStatus
 
@@ -73,6 +74,7 @@ type DemoRow = {
   id: string
   status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled'
   student_note: string | null
+  student_whatsapp: string | null
   preferred_time: string | null
   meet_link: string | null
   scheduled_at: string | null
@@ -85,7 +87,7 @@ type DemoRow = {
 type EnrollmentRow = {
   id: string
   course_id: string
-  status: 'pending_payment' | 'active' | 'paused' | 'cancelled' | 'completed'
+  status: 'pending_payment' | 'awaiting_verification' | 'active' | 'paused' | 'cancelled' | 'completed'
   first_month_total: number
   currency: string
   sessions_per_week: number
@@ -198,6 +200,7 @@ export default function AdminDashboard() {
   /* enrollments */
   const [enrollments,   setEnrollments]   = useState<EnrollmentRow[]>([])
   const [enrolLoading,  setEnrolLoading]  = useState(false)
+  const [proofsPending, setProofsPending] = useState(0)
   const [selectedCourse, setSelectedCourse] = useState<CourseRow | null>(null)
   const [courseFilter,   setCourseFilter]   = useState<'pending' | 'all'>('pending')
   const [rejectNoteInput, setRejectNoteInput] = useState('')
@@ -308,7 +311,7 @@ export default function AdminDashboard() {
     const { data } = await supabase
       .from('demo_requests')
       .select(`
-        id, status, student_note, preferred_time, meet_link, scheduled_at, created_at,
+        id, status, student_note, student_whatsapp, preferred_time, meet_link, scheduled_at, created_at,
         courses ( title, subject, level, exam_board ),
         teacher:profiles!teacher_id ( first_name, last_name ),
         student:profiles!student_id ( first_name, last_name )
@@ -342,6 +345,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!authChecking) fetchEnrollments()
   }, [authChecking, fetchEnrollments])
+
+  /* ── How many transfers are waiting to be verified (nav badge) ─────────────── */
+  const fetchProofCount = useCallback(async () => {
+    const { count } = await supabase
+      .from('payment_proofs')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending')
+    setProofsPending(count ?? 0)
+  }, [])
+
+  useEffect(() => {
+    if (!authChecking) fetchProofCount()
+  }, [authChecking, fetchProofCount])
 
   /* ── Signed URLs for selected application documents ─────────────────────────── */
   useEffect(() => {
@@ -574,6 +590,20 @@ export default function AdminDashboard() {
               <span className="admin-nav-badge">{awaitingPayment.length}</span>
             )}
           </button>
+
+          {/* Payments */}
+          <button
+            className={`admin-nav-item${view === 'payments' ? ' active' : ''}`}
+            onClick={() => navTo('payments')}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            Payments
+            {proofsPending > 0 && (
+              <span className="admin-nav-badge">{proofsPending}</span>
+            )}
+          </button>
         </nav>
 
         <div className="admin-side-foot">
@@ -619,6 +649,7 @@ export default function AdminDashboard() {
              : view === 'courses'      ? 'Course approvals'
              : view === 'demos'        ? 'Demo classes'
              : view === 'enrollments'  ? 'Course registrations'
+             : view === 'payments'     ? 'Payments'
              : 'Users'}
           </h1>
           <div className="admin-topbar-right">
@@ -800,12 +831,17 @@ export default function AdminDashboard() {
             )
           )}
 
+          {/* ── PAYMENTS ──────────────────────────────────────────────────────── */}
+          {view === 'payments' && (
+            <PaymentsView onReviewed={() => { fetchProofCount(); fetchEnrollments() }} />
+          )}
+
           {/* ── REGISTRATIONS ─────────────────────────────────────────────────── */}
           {view === 'enrollments' && (
             <>
               <div className="admin-note-bar">
-                Payment is not switched on yet — every registration sits at
-                <b> Payment pending</b> until checkout ships.
+                Students pay by bank transfer and upload proof. Verify transfers under
+                <b> Payments</b> — approving one moves the registration to <b>Active</b>.
               </div>
 
               {enrolLoading ? (
@@ -855,6 +891,7 @@ export default function AdminDashboard() {
                               : 'pending'
                             }`}>
                               {e.status === 'pending_payment' ? 'Payment pending'
+                                : e.status === 'awaiting_verification' ? 'Verifying payment'
                                 : e.status.charAt(0).toUpperCase() + e.status.slice(1)}
                             </span>
                           </td>
@@ -912,6 +949,7 @@ export default function AdminDashboard() {
                         <th>Course</th>
                         <th>Teacher</th>
                         <th>Student</th>
+                        <th>Contact</th>
                         <th>Time</th>
                         <th>Requested</th>
                         <th>Status</th>
@@ -929,6 +967,20 @@ export default function AdminDashboard() {
                           </td>
                           <td>{[d.teacher?.first_name, d.teacher?.last_name].filter(Boolean).join(' ') || '—'}</td>
                           <td>{[d.student?.first_name, d.student?.last_name].filter(Boolean).join(' ') || '—'}</td>
+                          <td>
+                            {d.student_whatsapp ? (
+                              <a
+                                className="ad-wa"
+                                href={`https://wa.me/${d.student_whatsapp.replace(/[^\d]/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {d.student_whatsapp}
+                              </a>
+                            ) : (
+                              <span className="at-muted">—</span>
+                            )}
+                          </td>
                           <td className="at-muted">
                             {d.scheduled_at
                               ? new Date(d.scheduled_at).toLocaleString('en-GB', {

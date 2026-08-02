@@ -1,0 +1,154 @@
+.sv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sv-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  transition: box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.sv-card:hover { box-shadow: var(--shadow-2); }
+
+.sv-card--active  { border-left-color: var(--success); }
+.sv-card--payment { border-left-color: var(--saffron); }
+.sv-card--demo    { border-left-color: var(--slate-2); }
+
+/* ── Head: who they are + how to reach them ─────────────────────────────────── */
+.sv-card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.sv-av {
+  width: 46px;
+  height: 46px;
+  font-size: 16px;
+  flex: none;
+  object-fit: cover;
+}
+
+.sv-id { min-width: 0; flex: 1; }
+
+.sv-name {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ink);
+  overflow-wrap: break-word;
+}
+
+.sv-since {
+  font-size: 12.5px;
+  color: var(--slate);
+  margin-top: 2px;
+}
+
+.sv-wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 8px 13px;
+  background: #E7F7EC;
+  border: 1px solid #bfe3cb;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  color: #14713C;
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  transition: background var(--dur) var(--ease);
+}
+.sv-wa:hover { background: #d6f0de; }
+
+.sv-nowa {
+  font-size: 12px;
+  color: var(--slate-2);
+  flex-shrink: 0;
+  font-style: italic;
+}
+
+/* ── Courses ────────────────────────────────────────────────────────────────── */
+.sv-courses {
+  border-top: 1px solid var(--cloud-2);
+  background: var(--paper);
+}
+
+.sv-course {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--cloud-2);
+}
+.sv-course:last-child { border-bottom: 0; }
+
+.sv-course-main { min-width: 0; }
+
+.sv-course-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: break-word;
+}
+.sv-course-title:hover { color: var(--evergreen); text-decoration: underline; }
+
+.sv-course-sched {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--slate);
+  margin-top: 4px;
+}
+.sv-course-sched svg { flex-shrink: 0; color: var(--slate-2); }
+
+.sv-course-start {
+  font-size: 12px;
+  color: var(--slate-2);
+  margin-top: 3px;
+}
+
+.sv-status {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--r-pill);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.sv-status--active                { background: var(--success-t);   color: var(--success); }
+.sv-status--pending_payment       { background: #FDF5E8;            color: var(--saffron-d); }
+.sv-status--awaiting_verification { background: var(--evergreen-t); color: var(--evergreen); }
+.sv-status--demo                  { background: var(--cloud-2);     color: var(--slate); }
+.sv-status--paused,
+.sv-status--cancelled             { background: var(--cloud-2);     color: var(--slate); }
+.sv-status--completed             { background: var(--evergreen-t); color: var(--evergreen); }
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .sv-card-head {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .sv-wa, .sv-nowa { width: 100%; justify-content: center; }
+  .sv-course {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 9px;
+  }
+}

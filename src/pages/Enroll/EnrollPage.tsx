@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import Navbar from '../../components/Navbar/Navbar'
 import Footer from '../../components/Footer/Footer'
 import { AVATAR_COLORS, colorIndexFromName, initialsOf, fmtPrice, fmtTime } from '../../lib/catalog'
+import PaymentPanel from '../../components/payment/PaymentPanel/PaymentPanel'
 import './EnrollPage.css'
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
@@ -33,7 +34,7 @@ type Teacher = {
 
 type Enrollment = {
   id: string
-  status: 'pending_payment' | 'active' | 'paused' | 'cancelled' | 'completed'
+  status: 'pending_payment' | 'awaiting_verification' | 'active' | 'paused' | 'cancelled' | 'completed'
   first_month_total: number
   currency: string
   start_date: string | null
@@ -129,7 +130,7 @@ export default function EnrollPage() {
           .select('id, status, first_month_total, currency, start_date')
           .eq('course_id', id!)
           .eq('student_id', userId!)
-          .in('status', ['pending_payment', 'active', 'paused'])
+          .in('status', ['pending_payment', 'awaiting_verification', 'active', 'paused'])
           .maybeSingle(),
       ])
 
@@ -222,60 +223,40 @@ export default function EnrollPage() {
     return <Shell><div className="en-loading">Loading course…</div></Shell>
   }
 
-  /* ── Payment handoff (terminal state for now) ────────────────────────────── */
-  const pending = created ?? (existing?.status === 'pending_payment' ? existing : null)
-  if (pending) {
+  /* ── Payment: manual bank transfer, verified by an admin ─────────────────── */
+  const unpaid = created ?? (
+    existing && (existing.status === 'pending_payment' || existing.status === 'awaiting_verification')
+      ? existing
+      : null
+  )
+
+  if (unpaid) {
     return (
       <Shell>
-        <div className="en-panel">
-          <span className="en-step-pill">Step 3 of 3</span>
-          <h1 className="display">
-            {created ? "You're registered. One step left." : 'Your registration is waiting on payment.'}
-          </h1>
-          <p className="en-lede">
-            <b>{course.title}</b> with {teacher.name} is held for you.
-            {teacher.name.split(' ')[0]} and our team have been notified.
-          </p>
-
-          <div className="en-amount">
-            <span>First month</span>
-            <b>{fmtPrice(pending.first_month_total, pending.currency)}</b>
-            <span className="en-amount-sub">
-              {plan.sessions} {plan.sessions === 1 ? 'class' : 'classes'} a week ·{' '}
-              {course.class_duration_min} min each
-            </span>
-          </div>
-
-          {pending.start_date && (
-            <div className="en-rowfact">
-              <span>Classes start</span>
-              <b>{new Date(pending.start_date).toLocaleDateString('en-GB', {
-                weekday: 'long', day: 'numeric', month: 'long',
-              })}</b>
-            </div>
-          )}
-
-          {/* The payment layer plugs in here. */}
-          <div className="en-paywall">
-            <div className="en-paywall-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" />
-              </svg>
-            </div>
-            <div>
-              <b>Payment isn&rsquo;t switched on yet</b>
-              <span>
-                Nothing has been charged. We&rsquo;ll email you the moment checkout opens,
-                and your place is held until then.
-              </span>
-            </div>
-          </div>
-
-          <div className="en-panel-foot">
-            <Link className="btn btn-primary" to="/dashboard">Go to my dashboard</Link>
-            <Link className="btn btn-outline" to={`/courses/${course.id}`}>Back to course</Link>
-          </div>
+        <div className="en-crumb">
+          <Link to="/tutors">Tutors</Link>
+          <span className="sep">/</span>
+          <Link to={`/courses/${course.id}`}>{course.title}</Link>
+          <span className="sep">/</span>
+          <span className="cur">Payment</span>
         </div>
+
+        <PaymentPanel
+          enrollmentId={unpaid.id}
+          studentId={userId!}
+          courseId={course.id}
+          courseTitle={course.title}
+          teacherName={teacher.name}
+          amount={unpaid.first_month_total}
+          currency={unpaid.currency}
+          startDate={unpaid.start_date}
+          status={unpaid.status}
+          // Re-read the enrollment so the panel flips to "awaiting verification".
+          onSubmitted={() => {
+            setCreated(null)
+            setExisting({ ...unpaid, status: 'awaiting_verification' })
+          }}
+        />
       </Shell>
     )
   }

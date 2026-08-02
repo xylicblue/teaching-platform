@@ -1,0 +1,368 @@
+/* ── Warning: nothing published ─────────────────────────────────────────────── */
+.pv-warn {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 13px 16px;
+  margin-bottom: var(--s4);
+  background: #FDF5E8;
+  border: 1px solid #e8d3aa;
+  border-left: 3px solid var(--saffron);
+  border-radius: var(--r-btn);
+}
+.pv-warn b    { font-size: 13.5px; color: var(--ink); }
+.pv-warn span { font-size: 13px; color: var(--slate); line-height: 1.5; }
+
+.pv-linkbtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--evergreen);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ── Sub-filter ─────────────────────────────────────────────────────────────── */
+.pv-subfilter {
+  display: flex;
+  gap: 6px;
+  margin-bottom: var(--s4);
+}
+
+.pv-subfilter button {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--slate);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 5px 13px;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+.pv-subfilter button[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* ── Proof cards ────────────────────────────────────────────────────────────── */
+.pv-list { display: flex; flex-direction: column; gap: 10px; }
+
+.pv-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 18px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: var(--r-card);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.pv-card:hover { border-color: var(--evergreen); box-shadow: var(--shadow-2); }
+.pv-card--pending  { border-left-color: var(--saffron); }
+.pv-card--approved { border-left-color: var(--success); }
+.pv-card--rejected { border-left-color: var(--critical); opacity: .82; }
+
+.pv-card-main { min-width: 0; }
+
+.pv-card-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 7px;
+}
+
+.pv-when { font-size: 11.5px; color: var(--slate-2); }
+
+.pv-card-title {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.pv-card-meta   { font-size: 13px; color: var(--slate); margin-top: 3px; }
+.pv-card-sender { font-size: 12.5px; color: var(--slate); margin-top: 4px; }
+.pv-card-sender b { color: var(--ink); font-weight: 600; }
+
+.pv-card-side { text-align: right; flex-shrink: 0; }
+
+.pv-amount {
+  display: block;
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.pv-review-cta {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--evergreen);
+  margin-top: 5px;
+}
+
+/* ── Review drawer ──────────────────────────────────────────────────────────── */
+.pv-detail { display: flex; flex-direction: column; }
+
+.pv-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: var(--s5);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.pv-detail-head h2 {
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.pv-detail-head p { font-size: 13px; color: var(--slate); margin-top: 4px; }
+
+.pv-close {
+  background: none;
+  border: 0;
+  color: var(--slate);
+  padding: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pv-close:hover { color: var(--ink); }
+
+.pv-detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s5);
+}
+
+.pv-proof {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: var(--s3);
+  text-align: center;
+  margin-bottom: var(--s5);
+}
+
+.pv-proof-img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: var(--r-btn);
+  background: var(--white);
+}
+
+.pv-proof-loading { font-size: 13px; color: var(--slate); padding: var(--s6) 0; }
+
+.pv-detail-facts {
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  margin-bottom: var(--s5);
+}
+
+.pv-detail-facts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--cloud-2);
+}
+.pv-detail-facts > div:last-child { border-bottom: 0; }
+.pv-detail-facts dt { font-size: 12.5px; color: var(--slate); flex-shrink: 0; }
+.pv-detail-facts dd {
+  font-size: 13px;
+  color: var(--ink);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.pv-detail-facts dd b { font-weight: 700; }
+
+.pv-decide { margin-bottom: var(--s5); }
+
+.pv-note-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 7px;
+}
+
+.pv-decide textarea {
+  width: 100%;
+  padding: 11px 13px;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  outline: none;
+  resize: vertical;
+  transition: border-color var(--dur) var(--ease);
+}
+.pv-decide textarea:focus { border-color: var(--evergreen); }
+
+.pv-err {
+  font-size: 12.5px;
+  color: var(--critical);
+  margin-top: 7px;
+  font-weight: 500;
+}
+
+.pv-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.pv-actions .btn { flex: 1 1 auto; }
+
+.pv-decided-note {
+  display: block;
+  margin-top: 7px;
+  font-style: italic;
+  opacity: .85;
+}
+
+/* ── Accounts ───────────────────────────────────────────────────────────────── */
+.pv-hint {
+  font-size: 13px;
+  color: var(--slate);
+  line-height: 1.55;
+  margin-bottom: var(--s4);
+  max-width: 68ch;
+}
+
+.pv-acc-list { display: flex; flex-direction: column; gap: 10px; }
+
+.pv-acc {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px 17px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+}
+
+.pv-acc--off { opacity: .6; }
+.pv-acc-main { min-width: 0; }
+
+.pv-acc-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+.pv-acc-top b { font-size: 15px; font-weight: 600; color: var(--ink); }
+
+.pv-acc-bank,
+.pv-acc-off-tag {
+  font-size: 11px;
+  color: var(--slate);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+}
+.pv-acc-off-tag { background: var(--cloud-2); }
+
+.pv-acc-num {
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+.pv-acc-name { font-size: 12.5px; color: var(--slate); margin-top: 2px; }
+.pv-acc-note { font-size: 12px; color: var(--slate-2); margin-top: 6px; line-height: 1.45; }
+
+.pv-acc-actions { display: flex; gap: 7px; flex-shrink: 0; }
+
+/* ── Account form ───────────────────────────────────────────────────────────── */
+.pv-acc-form {
+  margin-top: var(--s5);
+  padding: var(--s5);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+.pv-acc-form h3 {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: var(--s4);
+}
+
+.pv-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+}
+
+.pv-form-wide { grid-column: 1 / -1; }
+
+.pv-form-grid label { display: flex; flex-direction: column; gap: 6px; }
+
+.pv-form-grid label > span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.pv-form-grid em { font-style: normal; font-weight: 400; color: var(--slate-2); }
+
+.pv-form-grid input {
+  padding: 10px 12px;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  outline: none;
+  transition: border-color var(--dur) var(--ease);
+}
+.pv-form-grid input.mono { font-family: var(--mono); letter-spacing: 0.02em; }
+.pv-form-grid input:focus { border-color: var(--evergreen); }
+.pv-form-grid input::placeholder { color: var(--slate-2); }
+
+.pv-form-foot {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: var(--s4);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .pv-form-grid { grid-template-columns: 1fr; }
+  .pv-card,
+  .pv-acc {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 13px;
+  }
+  .pv-card-side { text-align: left; display: flex; align-items: center; justify-content: space-between; }
+  .pv-review-cta { margin-top: 0; }
+  .pv-acc-actions .btn { flex: 1; }
+}

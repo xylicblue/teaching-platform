@@ -486,3 +486,47 @@
   .dr-submit  { flex-direction: column; align-items: stretch; }
   .dr-submit .btn { width: 100%; }
 }
+
+/* ── WhatsApp field ─────────────────────────────────────────────────────────── */
+.dr-wa {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-top: 12px;
+  max-width: 340px;
+}
+
+.dr-wa-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  flex-shrink: 0;
+  color: #25D366;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: var(--r-btn) 0 0 var(--r-btn);
+}
+
+.dr-wa-input {
+  margin-top: 0;
+  border-radius: 0 var(--r-btn) var(--r-btn) 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.dr-wa:focus-within .dr-wa-icon { border-color: var(--evergreen); }
+
+.dr-input--err,
+.dr-input--err:focus { border-color: var(--critical); }
+.dr-wa:has(.dr-input--err) .dr-wa-icon { border-color: var(--critical); }
+
+.dr-field-hint,
+.dr-field-err {
+  font-size: 12.5px;
+  margin-top: 7px;
+  line-height: 1.45;
+}
+
+.dr-field-hint { color: var(--slate-2); }
+.dr-field-err  { color: var(--critical); font-weight: 500; }

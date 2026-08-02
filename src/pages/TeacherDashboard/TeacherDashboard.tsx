@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import AddCourseFlow from '../AddCourseFlow/AddCourseFlow'
+import StudentsView  from './StudentsView'
 import './TeacherDashboard.css'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
-type View       = 'overview' | 'courses' | 'demos' | 'profile'
+type View       = 'overview' | 'courses' | 'demos' | 'students' | 'profile'
 type DemoFilter = 'pending' | 'accepted' | 'completed' | 'all'
 type DemoStatus = 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled'
 
@@ -29,6 +30,7 @@ interface DemoRequest {
   course_id: string
   status: DemoStatus
   student_note: string | null
+  student_whatsapp: string | null
   preferred_time: string | null
   meet_link: string | null
   scheduled_at: string | null
@@ -100,6 +102,7 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
   const [demos,          setDemos]          = useState<DemoRequest[]>([])
   const [coursesLoading, setCoursesLoading] = useState(true)
   const [demosLoading,   setDemosLoading]   = useState(true)
+  const [studentCount,   setStudentCount]   = useState<number | null>(null)
 
   /* ── demo view state ── */
   const [demoFilter,   setDemoFilter]   = useState<DemoFilter>('pending')
@@ -188,7 +191,21 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
     setDemosLoading(false)
   }, [])
 
-  useEffect(() => { loadCourses(); loadDemos() }, [loadCourses, loadDemos])
+  /* Distinct students with a live enrolment — the real "how many do I teach". */
+  const loadStudentCount = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase
+      .from('enrollments')
+      .select('student_id')
+      .eq('teacher_id', user.id)
+      .in('status', ['active', 'paused'])
+    setStudentCount(new Set((data ?? []).map(r => r.student_id)).size)
+  }, [])
+
+  useEffect(() => {
+    loadCourses(); loadDemos(); loadStudentCount()
+  }, [loadCourses, loadDemos, loadStudentCount])
 
   /* ── toggle course active state ── */
   async function handleToggleCourse(id: string, active: boolean) {
@@ -298,6 +315,7 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
     overview: 'Overview',
     courses:  'My Courses',
     demos:    'Demo Requests',
+    students: 'My Students',
     profile:  'Edit Profile',
   }
 
@@ -320,6 +338,7 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
               { id: 'overview', label: 'Overview',      icon: IC.grid,   badge: 0 },
               { id: 'courses',  label: 'My Courses',    icon: IC.book,   badge: 0 },
               { id: 'demos',    label: 'Demo Requests', icon: IC.inbox,  badge: pendingDemos.length },
+              { id: 'students', label: 'My Students',   icon: IC.users,  badge: 0 },
               { id: 'profile',  label: 'Edit Profile',  icon: IC.person, badge: 0 },
             ] as const).map(item => (
               <button
@@ -337,8 +356,7 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
             <p className="tdash-nav-section">Coming soon</p>
 
             {[
-              { label: 'My Students', icon: IC.users },
-              { label: 'Earnings',    icon: IC.coin  },
+              { label: 'Earnings', icon: IC.coin },
             ].map(item => (
               <div key={item.label} className="tdash-nav-item tdash-nav-item--soon">
                 {item.icon}
@@ -383,6 +401,7 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
             {view === 'overview' && (
               <OverviewView
                 firstName={firstName}
+                studentCount={studentCount}
                 courses={courses}
                 activeCourses={activeCourses}
                 pendingDemos={pendingDemos}
@@ -417,6 +436,13 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
                 onComplete={handleCompleteDemo}
                 actionLoading={actionLoading}
                 actionError={actionError}
+              />
+            )}
+            {view === 'students' && (
+              <StudentsView
+                teacherId={userId}
+                demos={demos}
+                demosLoading={demosLoading}
               />
             )}
             {view === 'profile' && userId && (
@@ -454,7 +480,7 @@ export default function TeacherDashboard({ onBackToAdmin }: { onBackToAdmin?: ()
    OVERVIEW VIEW
 ══════════════════════════════════════════════════════════════════════════════ */
 function OverviewView({
-  firstName, courses, activeCourses, pendingDemos,
+  firstName, studentCount, courses, activeCourses, pendingDemos,
   coursesLoading, demosLoading,
   onAddCourse, onGoToDemos, onGoToCourses,
 }: {
@@ -462,6 +488,7 @@ function OverviewView({
   courses: Course[]
   activeCourses: Course[]
   pendingDemos: DemoRequest[]
+  studentCount: number | null
   coursesLoading: boolean
   demosLoading: boolean
   onAddCourse: () => void
@@ -514,7 +541,10 @@ function OverviewView({
           <div className="td-stat-icon td-si--succ">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
-          <div><b>—</b><span>Total students</span></div>
+          <div>
+            <b>{studentCount === null ? '—' : studentCount}</b>
+            <span>Enrolled students</span>
+          </div>
         </div>
         <div className="td-stat">
           <div className="td-stat-icon td-si--terr">
@@ -895,6 +925,23 @@ function DemoCard({
         <p className="td-dc-pref">
           <span>Preferred time:</span> {demo.preferred_time}
         </p>
+      )}
+
+      {/* Contact — only once you have accepted, so the number is not
+          handed out on requests the teacher turns down. */}
+      {demo.student_whatsapp && demo.status !== 'pending' && demo.status !== 'declined' && (
+        <a
+          className="td-dc-wa"
+          href={`https://wa.me/${demo.student_whatsapp.replace(/[^\d]/g, '')}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2A10 10 0 0 0 3.5 17.2L2 22l4.9-1.5A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .9.9-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/>
+            <path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.1-.7.2-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6.1-1.7-.9-2.9-1.6-4-3.5-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.7-1.6-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.3 5.2 4.6 1.9.8 2.7.9 3.6.8.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/>
+          </svg>
+          {demo.student_whatsapp}
+        </a>
       )}
 
       {/* Meet link (when accepted) */}

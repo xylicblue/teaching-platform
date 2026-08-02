@@ -27,7 +27,8 @@
   padding: 16px 18px;
 }
 
-.myenrol-row--pending_payment { border-left-color: var(--saffron); }
+.myenrol-row--pending_payment       { border-left-color: var(--saffron); }
+.myenrol-row--awaiting_verification { border-left-color: var(--evergreen); }
 .myenrol-row--active          { border-left-color: var(--success); }
 .myenrol-row--cancelled       { opacity: .7; }
 
@@ -49,7 +50,8 @@
   padding: 3px 9px;
 }
 
-.myenrol-pill--pending_payment { background: #FDF5E8;           color: var(--saffron-d); }
+.myenrol-pill--pending_payment       { background: #FDF5E8;           color: var(--saffron-d); }
+.myenrol-pill--awaiting_verification { background: var(--evergreen-t); color: var(--evergreen); }
 .myenrol-pill--active          { background: var(--success-t);   color: var(--success); }
 .myenrol-pill--paused          { background: var(--cloud-2);     color: var(--slate); }
 .myenrol-pill--cancelled       { background: var(--cloud-2);     color: var(--slate); }
